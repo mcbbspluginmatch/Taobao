@@ -5,7 +5,6 @@ import lol.clann.minecraft.plugin.taobao.mapper.TaobaoMapper;
 import lol.clann.minecraft.plugin.taobao.model.domain.DealLog;
 import lol.clann.minecraft.plugin.taobao.model.domain.Shop;
 import lol.clann.minecraft.plugin.taobao.model.domain.ShopItem;
-import lol.clann.minecraft.plugin.taobao.model.domain.ShopStatistics;
 import lol.clann.minecraft.springboot.adapter.bukkit.utils.InventoryUtils;
 import lol.clann.minecraft.springboot.adapter.bukkit.utils.ItemStackUtils;
 import lol.clann.minecraft.springboot.adapter.bukkit.utils.JSUtils;
@@ -561,8 +560,7 @@ public class TaobaoDealService {
     }
 
     private void refreshShopStatistics(long shopId) {
-        ShopStatistics statistics = taobaoMapper.fetchShopStatistics(shopId);
-        taobaoMapper.updateShopStatistics(statistics);
+        taobaoMapper.updateShopStatistics(shopId);
     }
 
     /**

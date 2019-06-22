@@ -62,7 +62,5 @@ public interface TaobaoMapper {
 
     void setAllShopItemCountAndCapabilityByShopId(long shopId);
 
-    ShopStatistics fetchShopStatistics(long shopId);
-
-    void updateShopStatistics(ShopStatistics statistics);
+    void updateShopStatistics(@Param("shopId")long shopId);
 }
