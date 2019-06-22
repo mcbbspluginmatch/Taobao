@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="lol.clann.minecraft.plugin.taobao.mapper.TaobaoMapper">
+
+
+    <select id="fetchShopMenuContent" resultType="lol.clann.minecraft.plugin.taobao.model.domain.Shop">
+        select
+            s.id,
+            s.sys,
+            s.title,
+            s.owner,
+            s.goods_sale_count,
+            s.goods_buy_count,
+            s.total_buy_cost,
+            s.total_buy_count,
+            s.total_sale_cost,
+            s.total_sale_count,
+            s.total_cost,
+            s.updated,
+            s.icon
+        from taobao_shop s
+        where deleted = 0
+        order by s.total_cost desc
+        limit #{offset}, #{count}
+    </select>
+
+    <select id="fetchShopCount" resultType="int">
+        select count(*)
+        from taobao_shop
+        where deleted = 0;
+    </select>
+
+    <select id="fetchShopContent" resultType="lol.clann.minecraft.plugin.taobao.model.domain.ShopItem">
+        select
+            si.id,
+            si.shop_id,
+            si.type,
+            si.price,
+            si.count,
+            si.max_count,
+            si.item,
+            si.total_deal_cost,
+            si.total_deal_count,
+            si.`order`
+        from taobao_shop_item si
+            left join taobao_shop s on s.id = si.shop_id
+        where si.deleted = 0 and s.deleted = 0
+              and s.owner = #{owner}
+              and si.type = #{type}
+        order by si.`order` asc
+        limit #{offset}, #{count}
+    </select>
+    <select id="fetchShopItemCount" resultType="int">
+        select count(*)
+        from taobao_shop_item si
+            left join taobao_shop s on s.id = si.shop_id
+        where si.deleted = 0 and s.deleted = 0
+              and s.owner = #{owner}
+              and si.type = #{type}
+    </select>
+    <select id="fetchShopItemById" resultType="lol.clann.minecraft.plugin.taobao.model.domain.ShopItem">
+        select
+            si.id,
+            si.shop_id,
+            si.type,
+            si.price,
+            si.count,
+            si.max_count,
+            si.item,
+            si.total_deal_cost,
+            si.total_deal_count,
+            si.`order`,
+            s.owner
+        from taobao_shop_item si
+            left join taobao_shop s on s.id = si.shop_id
+        where si.deleted = 0 and s.deleted = 0
+              and si.id = #{shopItemId}
+    </select>
+
+    <update id="updateShopItemAfterDeal">
+        update taobao_shop_item si
+            left join (
+                          select
+                              _si.id,
+                              sum(IFNULL(dl.count, 0)) as tCount,
+                              sum(IFNULL(dl.cost, 0))  as tCost
+                          from taobao_shop_item _si
+                              left join taobao_deal_log dl on dl.shop_item_id = _si.id
+                          where _si.id = #{shopItemId} and _si.deleted = 0 and dl.deleted = 0
+                      ) as t on t.id = si.id
+        set si.total_deal_cost = t.tCost, si.total_deal_count = t.tCount, si.count = #{count}
+        where si.id = #{shopItemId} and si.deleted = 0
+    </update>
+
+    <insert id="insertDealLog" useGeneratedKeys="true" keyProperty="id">
+        insert taobao_deal_log (shop_id, shot_item_type, shop_item_id, player, count, cost, tax, day)
+        values (#{shopId}, #{type}, #{shopItemId}, #{player}, #{count}, #{cost}, #{tax}, #{day})
+    </insert>
+
+    <select id="fetchShopItemByOrder" resultType="lol.clann.minecraft.plugin.taobao.model.domain.ShopItem">
+        select
+            si.id,
+            si.shop_id,
+            si.type,
+            si.price,
+            si.count,
+            si.max_count,
+            si.item,
+            si.total_deal_cost,
+            si.total_deal_count,
+            si.`order`,
+            s.owner
+        from taobao_shop_item si
+            left join taobao_shop s on s.id = si.shop_id
+        where si.deleted = 0 and s.deleted = 0
+              and si.shop_id = #{shopId}
+              and si.type = #{type}
+              and si.`order` = #{order}
+    </select>
+
+    <update id="update">
+        update taobao_shop_item
+        set
+            price   = #{price},
+            count   = #{count},
+            `order` = #{order}
+        where id = #{id}
+    </update>
+
+    <select id="fetchShopIdByOwner" resultType="java.lang.Long">
+        select s.id
+        from taobao_shop s
+        where s.owner = #{owner}
+              and s.deleted = 0
+    </select>
+
+    <select id="fetchShopByIdForUpdate" resultType="lol.clann.minecraft.plugin.taobao.model.domain.Shop">
+        select
+            s.id,
+            s.owner,
+            s.icon,
+            s.title,
+            s.updated,
+            s.total_cost,
+            s.total_sale_count,
+            s.total_sale_cost,
+            s.total_buy_count,
+            s.total_buy_cost,
+            s.goods_buy_count,
+            s.goods_sale_count,
+            s.sys
+        from taobao_shop s
+        where s.id = #{id}
+              and s.deleted = 0
+    </select>
+    <select id="fetchMaxOrder" resultType="int">
+        select IFNULL(max(`order`), 0)
+        from taobao_shop_item
+        where shop_id = #{id} and type = #{type} and deleted = 0
+    </select>
+    <insert id="insertShopItem" useGeneratedKeys="true" keyProperty="id">
+        insert into taobao_shop_item (shop_id, type, price, count, max_count, item, total_deal_count, total_deal_cost, `order`)
+        values (#{shopId}, #{type}, #{price}, #{count}, #{maxCount}, #{item}, #{totalDealCount}, #{totalDealCost},
+                #{order})
+    </insert>
+
+    <update id="deleteShopItem">
+        update taobao_shop_item
+        set deleted = 1
+        where id = #{id}
+    </update>
+    <update id="deleteShop">
+        update taobao_shop
+        set deleted = 1
+        where id = #{shopId}
+    </update>
+    <update id="deleteShopItemByShopId">
+        update taobao_shop_item
+        set deleted = 1
+        where shop_id = #{shopId}
+    </update>
+
+    <update id="clearShopItemCount">
+        update taobao_shop_item
+        set count = 0
+        where deleted = 0 and shop_id = #{shopId} and type = #{type}
+    </update>
+
+    <update id="updateShop">
+        update taobao_shop
+        set sys = #{sys}, icon = #{icon}, title = #{title}
+        where id = #{id}
+    </update>
+
+    <insert id="insertShop" useGeneratedKeys="true" keyProperty="id">
+        insert into taobao_shop (sys, owner, title, icon, goods_sale_count, goods_buy_count, total_sale_count, total_sale_cost, total_buy_count, total_buy_cost, total_cost)
+        values (#{sys}, #{owner}, #{title}, #{icon}, #{goodsSaleCount}, #{goodsBuyCount}, #{totalSaleCount},
+            #{totalSaleCost}, #{totalBuyCount}, #{totalBuyCost}, #{totalCost})
+    </insert>
+
+    <select id="fetchShopItemByIdForUpdate" resultType="lol.clann.minecraft.plugin.taobao.model.domain.ShopItem">
+        select
+            si.id,
+            si.shop_id,
+            si.type,
+            si.price,
+            si.count,
+            si.max_count,
+            si.item,
+            si.total_deal_cost,
+            si.total_deal_count,
+            si.`order`,
+            s.owner
+        from taobao_shop_item si
+            left join taobao_shop s on s.id = si.shop_id
+        where si.deleted = 0 and s.deleted = 0
+              and si.id = #{shopItemId} for update
+    </select>
+
+    <update id="refreshShopItemCount">
+        update taobao_shop s
+            left join (
+                          select
+                              shop_id,
+                              sum(IF(`type` = 'buy', 1, 0))  as buyCount,
+                              sum(IF(`type` = 'sale', 1, 0)) as saleCount
+                          from taobao_shop_item
+                          where deleted = 0 and shop_id = #{shopId}
+                          group by shop_id
+                      ) as si on si.shop_id = s.id
+        set s.goods_buy_count = si.buyCount, s.goods_sale_count = si.saleCount
+        where s.deleted = 0 and s.id = #{shopId}
+    </update>
+
+    <update id="refreshDealStatistics">
+        update taobao_shop s
+            left join (
+                          select
+                              shop_id,
+                              sum(IF(`type` = 'buy', total_deal_count, 0))  as buyCount,
+                              sum(IF(`type` = 'sale', total_deal_count, 0)) as saleCount,
+                              sum(IF(`type` = 'buy', total_deal_cost, 0))   as buyCost,
+                              sum(IF(`type` = 'sale', total_deal_cost, 0))  as saleCost
+                          from taobao_shop_item
+                          where shop_id = #{shopId}
+                          group by shop_id) as si on si.shop_id = s.id
+        set s.total_buy_count = si.buyCount, s.total_buy_cost = si.buyCost, s.total_sale_count = si.saleCount,
+            s.total_sale_cost = si.saleCost, s.total_cost = si.buyCost + si.saleCost
+        where s.deleted = 0 and s.id = #{shopId}
+    </update>
+
+    <select id="isSysShop" resultType="boolean">
+        select IFNULL(s.sys, 0)
+        from taobao_shop s
+        where s.id = #{shopId} and s.deleted = 0
+    </select>
+
+    <select id="calcSysShopDailyCost" resultType="long">
+        select IFNULL(sum(dl.cost), 0)
+        from taobao_deal_log dl
+            left join taobao_shop s on s.id = dl.shop_id
+        where dl.player = #{player} and dl.deleted = 0 and s.deleted = 0
+              and s.sys = 1
+              and dl.shot_item_type = 'buy'
+              and dl.day = current_date()
+    </select>
+
+    <update id="setAllShopItemCountAndCapabilityByShopId">
+        update taobao_shop_item si
+        set si.count = IF(si.type = 'buy', 0, 2147483647), si.max_count = 2147483647
+        where si.deleted = 0 and si.shop_id = #{shopId}
+    </update>
+
+</mapper>
