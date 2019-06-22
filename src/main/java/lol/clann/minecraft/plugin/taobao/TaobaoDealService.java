@@ -5,6 +5,7 @@ import lol.clann.minecraft.plugin.taobao.mapper.TaobaoMapper;
 import lol.clann.minecraft.plugin.taobao.model.domain.DealLog;
 import lol.clann.minecraft.plugin.taobao.model.domain.Shop;
 import lol.clann.minecraft.plugin.taobao.model.domain.ShopItem;
+import lol.clann.minecraft.plugin.taobao.model.domain.ShopStatistics;
 import lol.clann.minecraft.springboot.adapter.bukkit.utils.InventoryUtils;
 import lol.clann.minecraft.springboot.adapter.bukkit.utils.ItemStackUtils;
 import lol.clann.minecraft.springboot.adapter.bukkit.utils.JSUtils;
@@ -129,7 +130,7 @@ public class TaobaoDealService {
         log.setType(shopItem.getType());
         taobaoMapper.insertDealLog(log);
         refreshShopItemStatistics(log.getShopItemId(), shopItem.getCount());
-        refreshDealStatistics(log.getShopId());
+        refreshShopStatistics(log.getShopId());
 //        添加物品到玩家背包
         List<ItemStack> items = new ArrayList();
         while (count > 0) {
@@ -251,7 +252,7 @@ public class TaobaoDealService {
         log.setType(shopItem.getType());
         taobaoMapper.insertDealLog(log);
         refreshShopItemStatistics(log.getShopItemId(), shopItem.getCount());
-        refreshDealStatistics(log.getShopId());
+        refreshShopStatistics(log.getShopId());
         event.getInventory().setItem(event.getRawSlot(), shopItem.toIcon());
         {// 通知
             player.sendMessage(String.format(ChatColor.GREEN + "您出售了%s个%s到%s的商店,交易额:%s,收入:%s,缴税:%s,日交易额:%s",
@@ -336,7 +337,7 @@ public class TaobaoDealService {
         long newShopItemCost = type == ShopTypeEnum.buy ? config.getNewBuyCost() : config.getNewSaleCost();
         if (withdrawPlayer(player, newShopItemCost, true)) {
             taobaoMapper.insertShopItem(shopItem);
-            refreshShopItemCount(shopItem.getShopId());
+            refreshShopStatistics(shopItem.getShopId());
             player.sendMessage(ChatColor.GREEN + "上架成功,商品ID " + shopItem.getId());
         } else {
             player.sendMessage(ChatColor.RED + "余额不足,需要:" + newShopItemCost);
@@ -359,7 +360,7 @@ public class TaobaoDealService {
             return;
         }
         taobaoMapper.deleteShopItem(shopItem.getId());
-        refreshShopItemCount(shopItem.getShopId());
+        refreshShopStatistics(shopItem.getShopId());
         player.sendMessage(ChatColor.GREEN + "下架成功:" + shopItemId);
     }
 
@@ -559,22 +560,9 @@ public class TaobaoDealService {
         }
     }
 
-    /**
-     * 刷新商店商品数量
-     *
-     * @param shopId
-     */
-    private void refreshShopItemCount(long shopId) {
-        taobaoMapper.refreshShopItemCount(shopId);
-    }
-
-    /**
-     * 刷新商店交易额,交易数量
-     *
-     * @param shopId
-     */
-    private void refreshDealStatistics(long shopId) {
-        taobaoMapper.refreshDealStatistics(shopId);
+    private void refreshShopStatistics(long shopId) {
+        ShopStatistics statistics = taobaoMapper.fetchShopStatistics(shopId);
+        taobaoMapper.updateShopStatistics(statistics);
     }
 
     /**

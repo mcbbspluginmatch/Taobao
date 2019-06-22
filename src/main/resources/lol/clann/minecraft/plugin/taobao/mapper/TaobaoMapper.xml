@@ -218,38 +218,6 @@
               and si.id = #{shopItemId} for update
     </select>
 
-    <update id="refreshShopItemCount">
-        update taobao_shop s
-            left join (
-                          select
-                              shop_id,
-                              sum(IF(`type` = 'buy', 1, 0))  as buyCount,
-                              sum(IF(`type` = 'sale', 1, 0)) as saleCount
-                          from taobao_shop_item
-                          where deleted = 0 and shop_id = #{shopId}
-                          group by shop_id
-                      ) as si on si.shop_id = s.id
-        set s.goods_buy_count = si.buyCount, s.goods_sale_count = si.saleCount
-        where s.deleted = 0 and s.id = #{shopId}
-    </update>
-
-    <update id="refreshDealStatistics">
-        update taobao_shop s
-            left join (
-                          select
-                              shop_id,
-                              sum(IF(`type` = 'buy', total_deal_count, 0))  as buyCount,
-                              sum(IF(`type` = 'sale', total_deal_count, 0)) as saleCount,
-                              sum(IF(`type` = 'buy', total_deal_cost, 0))   as buyCost,
-                              sum(IF(`type` = 'sale', total_deal_cost, 0))  as saleCost
-                          from taobao_shop_item
-                          where shop_id = #{shopId}
-                          group by shop_id) as si on si.shop_id = s.id
-        set s.total_buy_count = si.buyCount, s.total_buy_cost = si.buyCost, s.total_sale_count = si.saleCount,
-            s.total_sale_cost = si.saleCost, s.total_cost = si.buyCost + si.saleCost
-        where s.deleted = 0 and s.id = #{shopId}
-    </update>
-
     <select id="isSysShop" resultType="boolean">
         select IFNULL(s.sys, 0)
         from taobao_shop s
@@ -270,6 +238,34 @@
         update taobao_shop_item si
         set si.count = IF(si.type = 'buy', 0, 2147483647), si.max_count = 2147483647
         where si.deleted = 0 and si.shop_id = #{shopId}
+    </update>
+
+    <select id="fetchShopStatistics" resultType="lol.clann.minecraft.plugin.taobao.model.domain.ShopStatistics">
+        select
+            shop_id                                       as id,
+            sum(IF(`type` = 'buy', total_deal_count, 0))  as goodsBuyCount,
+            sum(IF(`type` = 'sale', total_deal_count, 0)) as goodsSaleCount,
+            sum(IF(`type` = 'buy', total_deal_cost, 0))   as totalBuyCost,
+            sum(IF(`type` = 'sale', total_deal_cost, 0))  as totalSaleCost,
+            sum(IF(`type` = 'buy', 1, 0))                 as totalBuyCount,
+            sum(IF(`type` = 'sale', 1, 0))                as totalSaleCount,
+            sum(IFNULL(total_deal_cost, 0))               as totalCost
+        from taobao_shop_item
+        where deleted = 0 and shop_id = #{shopId}
+        group by shop_id
+    </select>
+
+    <update id="updateShopStatistics">
+        update taobao_shop
+        set
+            goods_buy_count  = #{goodsBuyCount},
+            goods_sale_count = #{goodsSaleCount},
+            total_buy_cost   = #{totalBuyCost},
+            total_sale_cost  = #{totalSaleCost},
+            total_buy_count  = #{totalBuyCount},
+            total_sale_count = #{totalSaleCount},
+            total_cost       = #{totalCost}
+        where id = #{id}
     </update>
 
 </mapper>

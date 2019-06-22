@@ -4,6 +4,7 @@ import lol.clann.minecraft.plugin.taobao.constant.ShopTypeEnum;
 import lol.clann.minecraft.plugin.taobao.model.domain.DealLog;
 import lol.clann.minecraft.plugin.taobao.model.domain.Shop;
 import lol.clann.minecraft.plugin.taobao.model.domain.ShopItem;
+import lol.clann.minecraft.plugin.taobao.model.domain.ShopStatistics;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
@@ -27,11 +28,11 @@ public interface TaobaoMapper {
 
     ShopItem fetchShopItemByIdForUpdate(@Param("shopItemId") long shopItemId);
 
-    boolean isSysShop(@Param("shopId")long shopId);
+    boolean isSysShop(@Param("shopId") long shopId);
 
-    long calcSysShopDailyCost(@Param("player")String player);
-    
-    void updateShopItemAfterDeal(@Param("shopItemId")long shopItemId, @Param("count")long count);
+    long calcSysShopDailyCost(@Param("player") String player);
+
+    void updateShopItemAfterDeal(@Param("shopItemId") long shopItemId, @Param("count") long count);
 
     void insertDealLog(DealLog log);
 
@@ -59,17 +60,9 @@ public interface TaobaoMapper {
 
     void insertShop(Shop shop);
 
-    /**
-     * 刷新商品数量
-     * @param shopId
-     */
-    void refreshShopItemCount(@Param("shopId")long shopId);
-
-    /**
-     * 刷新店铺交易额
-     * @param shopId
-     */
-    void refreshDealStatistics(@Param("shopId")long shopId);
-
     void setAllShopItemCountAndCapabilityByShopId(long shopId);
+
+    ShopStatistics fetchShopStatistics(long shopId);
+
+    void updateShopStatistics(ShopStatistics statistics);
 }
