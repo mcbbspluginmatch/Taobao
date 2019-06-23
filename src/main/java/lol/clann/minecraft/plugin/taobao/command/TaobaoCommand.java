@@ -49,6 +49,7 @@ public class TaobaoCommand {
             cooldown = 1000,
             concurrentLevel = CommandConcurrentLevelEnum.SENDER,
             des = "创建商店,手续费:${taobao.cost.createShopCost}",
+            resolveColorCode = true,
             async = true)
     private void createShop(@Sender Player player, String name) {
         taobaoDealService.createShop(player, name);
@@ -121,6 +122,7 @@ public class TaobaoCommand {
             cooldown = 1000,
             concurrentLevel = CommandConcurrentLevelEnum.SENDER,
             des = "设置店铺名字,手续费:${taobao.cost.setShopNameCost}",
+            resolveColorCode = true,
             async = true)
     private void setShopName(@Sender Player player, String name) {
         taobaoDealService.setShopName(player, name);
