@@ -152,13 +152,13 @@ public class TaobaoDealService {
 
 
         Map<String, Object> msgContext = new HashMap<>();
-        msgContext.put("player", player.getName());
-        msgContext.put("count", log.getCount());
-        msgContext.put("name", itemStackUtils.getDisplayName(shopItem.getItem()));
-        msgContext.put("owner", owner.getName());
-        msgContext.put("cost", log.getCost());
-        msgContext.put("income", log.getCost() - log.getTax());
-        msgContext.put("tax", log.getTax());
+        msgContext.put("${player}", player.getName());
+        msgContext.put("${count}", log.getCount());
+        msgContext.put("${name}", itemStackUtils.getDisplayName(shopItem.getItem()));
+        msgContext.put("${owner}", owner.getName());
+        msgContext.put("${cost}", log.getCost());
+        msgContext.put("${income}", log.getCost() - log.getTax());
+        msgContext.put("${tax}", log.getTax());
 
         // 通知
         notify(player, messages.getBuy(), msgContext);
@@ -258,14 +258,14 @@ public class TaobaoDealService {
         event.getInventory().setItem(event.getRawSlot(), shopItem.toIcon());
 
         Map<String, Object> msgContext = new HashMap<>();
-        msgContext.put("player", player.getName());
-        msgContext.put("count", log.getCount());
-        msgContext.put("name", itemStackUtils.getDisplayName(shopItem.getItem()));
-        msgContext.put("owner", owner.getName());
-        msgContext.put("cost", log.getCost());
-        msgContext.put("income", log.getCost() - log.getTax());
-        msgContext.put("tax", log.getTax());
-        msgContext.put("todayTotalCost", cost2);
+        msgContext.put("${player}", player.getName());
+        msgContext.put("${count}", log.getCount());
+        msgContext.put("${name}", itemStackUtils.getDisplayName(shopItem.getItem()));
+        msgContext.put("${owner}", owner.getName());
+        msgContext.put("${cost}", log.getCost());
+        msgContext.put("${income}", log.getCost() - log.getTax());
+        msgContext.put("${tax}", log.getTax());
+        msgContext.put("${todayTotalCost}", cost2);
 
         // 通知
         notify(player, messages.getSale(), msgContext);
@@ -287,9 +287,9 @@ public class TaobaoDealService {
         }
         shopItem.setOrder(order);
         Map<String, Object> msgContext = new HashMap<>();
-        msgContext.put("money", config.getSetOrderCost());
-        msgContext.put("id", shopItemId);
-        msgContext.put("order", order);
+        msgContext.put("${money}", config.getSetOrderCost());
+        msgContext.put("${id}", shopItemId);
+        msgContext.put("${order}", order);
 
         if (withdrawPlayer(player, config.getSetOrderCost(), true)) {
             taobaoMapper.update(shopItem);
@@ -341,17 +341,17 @@ public class TaobaoDealService {
         long newShopItemCost = type == ShopTypeEnum.buy ? config.getNewBuyCost() : config.getNewSaleCost();
 
         Map<String, Object> msgContext = new HashMap<>();
-        msgContext.put("player", player.getName());
-        msgContext.put("name", itemStackUtils.getDisplayName(item));
-        msgContext.put("type", shopItem.getType().getDisplayName());
-        msgContext.put("money", newShopItemCost);
+        msgContext.put("${player}", player.getName());
+        msgContext.put("${name}", itemStackUtils.getDisplayName(item));
+        msgContext.put("${type}", shopItem.getType().getDisplayName());
+        msgContext.put("${money}", newShopItemCost);
 
         if (withdrawPlayer(player, newShopItemCost, true)) {
             taobaoMapper.insertShopItem(shopItem);
             refreshShopStatistics(shopItem.getShopId());
 
 //      消息通知
-            msgContext.put("id", shopItem.getId());
+            msgContext.put("${id}", shopItem.getId());
             if (type == ShopTypeEnum.buy) {
                 notify(player, messages.getNewBuy(), msgContext);
             } else {
@@ -388,10 +388,10 @@ public class TaobaoDealService {
         refreshShopStatistics(shopItem.getShopId());
 //      消息通知
         Map<String, Object> msgContext = new HashMap<>();
-        msgContext.put("player", player.getName());
-        msgContext.put("id", shopItemId);
-        msgContext.put("name", itemStackUtils.getDisplayName(shopItem.getItem()));
-        msgContext.put("type", shopItem.getType().getDisplayName());
+        msgContext.put("${player}", player.getName());
+        msgContext.put("${id}", shopItemId);
+        msgContext.put("${name}", itemStackUtils.getDisplayName(shopItem.getItem()));
+        msgContext.put("${type}", shopItem.getType().getDisplayName());
         notify(player, messages.getDeleteShopItem(), msgContext);
         broadcast(messages.getDeleteShopItemBroadcast(), shopItem.toIcon(), msgContext);
     }
@@ -454,10 +454,10 @@ public class TaobaoDealService {
         long tax = (long) Math.ceil(config.getPutStockTax() * count);
 
         Map<String, Object> msgContext = new HashMap<>();
-        msgContext.put("count", count);
-        msgContext.put("money", tax);
-        msgContext.put("type", shopItem.getType().getDisplayName());
-        msgContext.put("name", itemStackUtils.getDisplayName(shopItem.getItem()));
+        msgContext.put("${count}", count);
+        msgContext.put("${money}", tax);
+        msgContext.put("${type}", shopItem.getType().getDisplayName());
+        msgContext.put("${name}", itemStackUtils.getDisplayName(shopItem.getItem()));
 
         if (!withdrawPlayer(player, tax, true)) {
             notify(player, messages.getRequireMony(), msgContext);
@@ -508,9 +508,9 @@ public class TaobaoDealService {
         event.getInventory().setItem(event.getRawSlot(), shopItem.toOwnerIcon());
 
         Map<String, Object> msgContext = new HashMap<>();
-        msgContext.put("count", count);
-        msgContext.put("type", shopItem.getType().getDisplayName());
-        msgContext.put("name", itemStackUtils.getDisplayName(shopItem.getItem()));
+        msgContext.put("${count}", count);
+        msgContext.put("${type}", shopItem.getType().getDisplayName());
+        msgContext.put("${name}", itemStackUtils.getDisplayName(shopItem.getItem()));
 
         notify(player, messages.getPullStock(), msgContext);
     }
@@ -536,8 +536,8 @@ public class TaobaoDealService {
         }
         shop.setTitle(ChatColor.GREEN + name + ChatColor.WHITE);
         Map<String, Object> msgContext = new HashMap<>();
-        msgContext.put("player", player.getName());
-        msgContext.put("name", name);
+        msgContext.put("${player}", player.getName());
+        msgContext.put("${name}", name);
         if (withdrawPlayer(player, config.getSetShopNameCost(), true)) {
             taobaoMapper.updateShop(shop);
             notify(player, messages.getRenameShop(), msgContext);
@@ -560,13 +560,13 @@ public class TaobaoDealService {
         shop.setOwner(player.getName());
 
         Map<String, Object> msgContext = new HashMap<>();
-        msgContext.put("player", player.getName());
-        msgContext.put("money", config.getCreateShopCost());
-        msgContext.put("name", name);
+        msgContext.put("${player}", player.getName());
+        msgContext.put("${money}", config.getCreateShopCost());
+        msgContext.put("${name}", name);
 
         if (withdrawPlayer(player, config.getCreateShopCost(), true)) {
             taobaoMapper.insertShop(shop);
-            msgContext.put("id", shop.getId());
+            msgContext.put("${id}", shop.getId());
             notify(player, messages.getCreateShop(), msgContext);
             broadcast(messages.getCreateShopBroadcast(), shop.getIcon(), msgContext);
         } else {
@@ -593,9 +593,9 @@ public class TaobaoDealService {
         shop.getIcon().setAmount(1);
 
         Map<String, Object> msgContext = new HashMap<>();
-        msgContext.put("player", player.getName());
-        msgContext.put("money", config.getSetIconCost());
-        msgContext.put("name", itemStackUtils.getDisplayName(shop.getIcon()));
+        msgContext.put("${player}", player.getName());
+        msgContext.put("${money}", config.getSetIconCost());
+        msgContext.put("${name}", itemStackUtils.getDisplayName(shop.getIcon()));
 
         if (withdrawPlayer(player, config.getSetIconCost(), true)) {
             taobaoMapper.updateShop(shop);
