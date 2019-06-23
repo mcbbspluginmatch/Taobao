@@ -19,4 +19,9 @@ public class Define implements PluginDefine {
     public String getDisplayName() {
         return "淘宝商城";
     }
+
+    @Override
+    public String getVersion() {
+        return "0.0.2";
+    }
 }
