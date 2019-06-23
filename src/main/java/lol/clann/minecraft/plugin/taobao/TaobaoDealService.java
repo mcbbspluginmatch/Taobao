@@ -2,9 +2,12 @@ package lol.clann.minecraft.plugin.taobao;
 
 import lol.clann.minecraft.plugin.taobao.constant.ShopTypeEnum;
 import lol.clann.minecraft.plugin.taobao.mapper.TaobaoMapper;
+import lol.clann.minecraft.plugin.taobao.message.Message;
+import lol.clann.minecraft.plugin.taobao.message.Messages;
 import lol.clann.minecraft.plugin.taobao.model.domain.DealLog;
 import lol.clann.minecraft.plugin.taobao.model.domain.Shop;
 import lol.clann.minecraft.plugin.taobao.model.domain.ShopItem;
+import lol.clann.minecraft.springboot.adapter.bukkit.rawmessage.RawMessage;
 import lol.clann.minecraft.springboot.adapter.bukkit.utils.InventoryUtils;
 import lol.clann.minecraft.springboot.adapter.bukkit.utils.ItemStackUtils;
 import lol.clann.minecraft.springboot.adapter.bukkit.utils.JSUtils;
@@ -51,6 +54,8 @@ public class TaobaoDealService {
     private MenuUtils menuUtils;
     @Autowired
     private JSUtils jsUtils;
+    @Autowired
+    private Messages messages;
 
     private String noShopMsg = ChatColor.RED + "店铺不存在";
 
@@ -96,7 +101,7 @@ public class TaobaoDealService {
         count = Math.min(count, invCapability);
         long maxBuyCount = (long) economy.getBalance(player) / shopItem.getPrice();
         if (maxBuyCount <= 0) {
-            player.sendMessage(ChatColor.RED + "余额不足!");
+            notify(player, messages.getNotEnoughMony(), new HashMap<>());
             return;
         }
         count = (int) Math.min(count, maxBuyCount);
@@ -144,23 +149,21 @@ public class TaobaoDealService {
         }
         player.getInventory().addItem(items.toArray(new ItemStack[items.size()]));
         event.getInventory().setItem(event.getRawSlot(), shopItem.toIcon());
-        { // 通知
-            player.sendMessage(String.format(ChatColor.GREEN + "您从%s的商店购买了%s个%s,花费:%s",
-                    ChatColor.RED + owner.getName() + ChatColor.GREEN,
-                    ChatColor.RED.toString() + log.getCount() + ChatColor.GREEN,
-                    ChatColor.RED + itemStackUtils.getDisplayName(shopItem.getItem()) + ChatColor.GREEN,
-                    ChatColor.RED.toString() + log.getCost() + ChatColor.GREEN
-            ));
-            if (owner.isOnline()) {
-                ((Player) owner)
-                        .sendMessage(String.format(ChatColor.GREEN + "%s从您的商店购买了%s个%s,交易额:%s,缴税:%s,收入:%s",
-                                ChatColor.RED.toString() + player.getName() + ChatColor.GREEN,
-                                ChatColor.RED.toString() + log.getCount() + ChatColor.GREEN,
-                                ChatColor.RED + itemStackUtils.getDisplayName(shopItem.getItem()) + ChatColor.GREEN,
-                                ChatColor.RED.toString() + (log.getCost()) + ChatColor.GREEN,
-                                ChatColor.RED.toString() + (log.getTax()) + ChatColor.GREEN,
-                                ChatColor.RED.toString() + (log.getCost() - log.getTax()) + ChatColor.GREEN));
-            }
+
+
+        Map<String, Object> msgContext = new HashMap<>();
+        msgContext.put("player", player.getName());
+        msgContext.put("count", log.getCount());
+        msgContext.put("name", itemStackUtils.getDisplayName(shopItem.getItem()));
+        msgContext.put("owner", owner.getName());
+        msgContext.put("cost", log.getCost());
+        msgContext.put("income", log.getCost() - log.getTax());
+        msgContext.put("tax", log.getTax());
+
+        // 通知
+        notify(player, messages.getBuy(), msgContext);
+        if (owner.isOnline()) {
+            notify((Player) owner, messages.getBuyNotifyOwner(), msgContext);
         }
     }
 
@@ -201,7 +204,7 @@ public class TaobaoDealService {
         long banlance = (long) economy.getBalance(owner);
         int maxSaleCount = (int) (banlance / shopItem.getPrice());
         if (maxSaleCount == 0) {
-            player.sendMessage(ChatColor.RED + "店主余额不足!");
+            notify(player, messages.getNotEnoughMony(), new HashMap<>());
             return;
         }
         count = Math.min(Math.min(Math.min(shopCapability, itemCount), maxSaleCount), count);
@@ -253,24 +256,21 @@ public class TaobaoDealService {
         refreshShopItemStatistics(log.getShopItemId(), shopItem.getCount());
         refreshShopStatistics(log.getShopId());
         event.getInventory().setItem(event.getRawSlot(), shopItem.toIcon());
-        {// 通知
-            player.sendMessage(String.format(ChatColor.GREEN + "您出售了%s个%s到%s的商店,交易额:%s,收入:%s,缴税:%s,日交易额:%s",
-                    ChatColor.RED.toString() + log.getCount() + ChatColor.GREEN,
-                    ChatColor.RED + itemStackUtils.getDisplayName(shopItem.getItem()) + ChatColor.GREEN,
-                    ChatColor.RED + owner.getName() + ChatColor.GREEN,
-                    ChatColor.RED.toString() + log.getCost() + ChatColor.GREEN,
-                    ChatColor.RED.toString() + (log.getCost() - log.getTax()) + ChatColor.GREEN,
-                    ChatColor.RED.toString() + log.getTax() + ChatColor.GREEN,
-                    ChatColor.RED.toString() + cost2 + ChatColor.GREEN
-            ));
-            if (owner.isOnline()) {
-                ((Player) owner)
-                        .sendMessage(String.format(ChatColor.GREEN + "%s出售了%s个%s到您的商店,花费:%s",
-                                ChatColor.RED.toString() + player.getName() + ChatColor.GREEN,
-                                ChatColor.RED.toString() + log.getCount() + ChatColor.GREEN,
-                                ChatColor.RED + itemStackUtils.getDisplayName(shopItem.getItem()) + ChatColor.GREEN,
-                                ChatColor.RED.toString() + log.getCost() + ChatColor.GREEN));
-            }
+
+        Map<String, Object> msgContext = new HashMap<>();
+        msgContext.put("player", player.getName());
+        msgContext.put("count", log.getCount());
+        msgContext.put("name", itemStackUtils.getDisplayName(shopItem.getItem()));
+        msgContext.put("owner", owner.getName());
+        msgContext.put("cost", log.getCost());
+        msgContext.put("income", log.getCost() - log.getTax());
+        msgContext.put("tax", log.getTax());
+        msgContext.put("todayTotalCost", cost2);
+
+        // 通知
+        notify(player, messages.getSale(), msgContext);
+        if (owner.isOnline()) {
+            notify((Player) owner, messages.getSaleNotifyOwner(), msgContext);
         }
     }
 
@@ -286,11 +286,16 @@ public class TaobaoDealService {
             return;
         }
         shopItem.setOrder(order);
+        Map<String, Object> msgContext = new HashMap<>();
+        msgContext.put("money", config.getSetOrderCost());
+        msgContext.put("id", shopItemId);
+        msgContext.put("order", order);
+
         if (withdrawPlayer(player, config.getSetOrderCost(), true)) {
             taobaoMapper.update(shopItem);
-            player.sendMessage(String.format(ChatColor.GREEN + "商品 %s 序号变更为 %s", shopItemId, order));
+            notify(player, messages.getSetOrder(), msgContext);
         } else {
-            player.sendMessage(ChatColor.RED + "余额不足,需要:" + config.getSetOrderCost());
+            notify(player, messages.getRequireMony(), msgContext);
         }
     }
 
@@ -334,12 +339,33 @@ public class TaobaoDealService {
         shopItem.setPrice(price);
         shopItem.setType(type);
         long newShopItemCost = type == ShopTypeEnum.buy ? config.getNewBuyCost() : config.getNewSaleCost();
+
+        Map<String, Object> msgContext = new HashMap<>();
+        msgContext.put("player", player.getName());
+        msgContext.put("name", itemStackUtils.getDisplayName(item));
+        msgContext.put("type", shopItem.getType().getDisplayName());
+        msgContext.put("money", newShopItemCost);
+
         if (withdrawPlayer(player, newShopItemCost, true)) {
             taobaoMapper.insertShopItem(shopItem);
             refreshShopStatistics(shopItem.getShopId());
-            player.sendMessage(ChatColor.GREEN + "上架成功,商品ID " + shopItem.getId());
+
+//      消息通知
+            msgContext.put("id", shopItem.getId());
+            if (type == ShopTypeEnum.buy) {
+                notify(player, messages.getNewBuy(), msgContext);
+            } else {
+                notify(player, messages.getNewSale(), msgContext);
+            }
+
+            if (type == ShopTypeEnum.buy) {
+                broadcast(messages.getNewBuyBroadcast(), item, msgContext);
+            } else {
+                broadcast(messages.getNewSaleBroadcast(), item, msgContext);
+            }
         } else {
-            player.sendMessage(ChatColor.RED + "余额不足,需要:" + newShopItemCost);
+//      消息通知
+            notify(player, messages.getRequireMony(), msgContext);
         }
     }
 
@@ -360,7 +386,14 @@ public class TaobaoDealService {
         }
         taobaoMapper.deleteShopItem(shopItem.getId());
         refreshShopStatistics(shopItem.getShopId());
-        player.sendMessage(ChatColor.GREEN + "下架成功:" + shopItemId);
+//      消息通知
+        Map<String, Object> msgContext = new HashMap<>();
+        msgContext.put("player", player.getName());
+        msgContext.put("id", shopItemId);
+        msgContext.put("name", itemStackUtils.getDisplayName(shopItem.getItem()));
+        msgContext.put("type", shopItem.getType().getDisplayName());
+        notify(player, messages.getDeleteShopItem(), msgContext);
+        broadcast(messages.getDeleteShopItemBroadcast(), shopItem.toIcon(), msgContext);
     }
 
     @Transactional(rollbackFor = Throwable.class)
@@ -419,22 +452,23 @@ public class TaobaoDealService {
         }
         int count = Math.min(putCount, Math.min(itemCount, capability));
         long tax = (long) Math.ceil(config.getPutStockTax() * count);
+
+        Map<String, Object> msgContext = new HashMap<>();
+        msgContext.put("count", count);
+        msgContext.put("money", tax);
+        msgContext.put("type", shopItem.getType().getDisplayName());
+        msgContext.put("name", itemStackUtils.getDisplayName(shopItem.getItem()));
+
         if (!withdrawPlayer(player, tax, true)) {
-            player.sendMessage(ChatColor.RED + "余额不足,需要手续费:" + tax);
+            notify(player, messages.getRequireMony(), msgContext);
             return;
         }
         inventoryUtils.pull(player.getInventory(), itemStack, count);
         shopItem.setCount(shopItem.getCount() + count);
         taobaoMapper.update(shopItem);
         event.getInventory().setItem(event.getRawSlot(), shopItem.toOwnerIcon());
-        {
-            player.sendMessage(String.format(ChatColor.GREEN + "您添加了%s个%s到%s商店,手续费:%s",
-                    count,
-                    ChatColor.RED + itemStackUtils.getDisplayName(shopItem.getItem()) + ChatColor.GREEN,
-                    ChatColor.RED + shopItem.getType().getDisplayName() + ChatColor.GREEN,
-                    tax
-            ));
-        }
+
+        notify(player, messages.getPutStock(), msgContext);
     }
 
     @Transactional(rollbackFor = Throwable.class)
@@ -472,13 +506,13 @@ public class TaobaoDealService {
         shopItem.setCount(shopItem.getCount() - count);
         taobaoMapper.update(shopItem);
         event.getInventory().setItem(event.getRawSlot(), shopItem.toOwnerIcon());
-        {
-            player.sendMessage(String.format(ChatColor.GREEN + "您从%s商店取出了%s个%s",
-                    ChatColor.RED + shopItem.getType().getDisplayName() + ChatColor.GREEN,
-                    count,
-                    ChatColor.RED + itemStackUtils.getDisplayName(shopItem.getItem()) + ChatColor.GREEN
-            ));
-        }
+
+        Map<String, Object> msgContext = new HashMap<>();
+        msgContext.put("count", count);
+        msgContext.put("type", shopItem.getType().getDisplayName());
+        msgContext.put("name", itemStackUtils.getDisplayName(shopItem.getItem()));
+
+        notify(player, messages.getPullStock(), msgContext);
     }
 
     @Transactional(rollbackFor = Throwable.class)
@@ -501,11 +535,15 @@ public class TaobaoDealService {
             return;
         }
         shop.setTitle(ChatColor.GREEN + name + ChatColor.WHITE);
+        Map<String, Object> msgContext = new HashMap<>();
+        msgContext.put("player", player.getName());
+        msgContext.put("name", name);
         if (withdrawPlayer(player, config.getSetShopNameCost(), true)) {
             taobaoMapper.updateShop(shop);
-            player.sendMessage(String.format(ChatColor.RED + "店铺更名为:", name));
+            notify(player, messages.getRenameShop(), msgContext);
+            broadcast(messages.getRenameShopBroadcast(), shop.getIcon(), msgContext);
         } else {
-            player.sendMessage(ChatColor.GREEN + "余额不足,需要:" + config.getSetShopNameCost());
+            notifyNotEnoughMoney(player, config.getSetShopNameCost());
         }
     }
 
@@ -520,11 +558,19 @@ public class TaobaoDealService {
         shop.setTitle(ChatColor.GREEN + name + ChatColor.WHITE);
         shop.setIcon(itemStackUtils.asCraftItemStackCopy(new ItemStack(Material.STONE)));
         shop.setOwner(player.getName());
+
+        Map<String, Object> msgContext = new HashMap<>();
+        msgContext.put("player", player.getName());
+        msgContext.put("money", config.getCreateShopCost());
+        msgContext.put("name", name);
+
         if (withdrawPlayer(player, config.getCreateShopCost(), true)) {
             taobaoMapper.insertShop(shop);
-            player.sendMessage(ChatColor.GREEN + "店铺创建成功");
+            msgContext.put("id", shop.getId());
+            notify(player, messages.getCreateShop(), msgContext);
+            broadcast(messages.getCreateShopBroadcast(), shop.getIcon(), msgContext);
         } else {
-            player.sendMessage(ChatColor.RED + "余额不足,需要:" + config.getCreateShopCost());
+            notify(player, messages.getRequireMony(), msgContext);
         }
     }
 
@@ -545,6 +591,12 @@ public class TaobaoDealService {
         }
         shop.setIcon(hand.clone());
         shop.getIcon().setAmount(1);
+
+        Map<String, Object> msgContext = new HashMap<>();
+        msgContext.put("player", player.getName());
+        msgContext.put("money", config.getSetIconCost());
+        msgContext.put("name", itemStackUtils.getDisplayName(shop.getIcon()));
+
         if (withdrawPlayer(player, config.getSetIconCost(), true)) {
             taobaoMapper.updateShop(shop);
             hand.setAmount(hand.getAmount() - 1);
@@ -553,9 +605,10 @@ public class TaobaoDealService {
             } else {
                 player.setItemInHand(null);
             }
-            player.sendMessage(ChatColor.RED + "成功更换店铺图标");
+            notify(player, messages.getSetShopIcon(), msgContext);
+            broadcast(messages.getSetShopIconBroadcast(), shop.getIcon(), msgContext);
         } else {
-            player.sendMessage(ChatColor.GREEN + "余额不足,需要:" + config.getSetIconCost());
+            notify(player, messages.getRequireMony(), msgContext);
         }
     }
 
@@ -604,6 +657,41 @@ public class TaobaoDealService {
             if (op != null) {
                 economy.depositPlayer(op, money);
             }
+        }
+    }
+
+    private void broadcast(Message msg, ItemStack showItemStack, Map<String, Object> msgContext) {
+        if (msg != null && msg.isEnable()) {
+            RawMessage.createRawMessage(msg.getMessage().resolve(msgContext))
+                    .showItem(showItemStack)
+                    .broadcast();
+        }
+    }
+
+    private void broadcast(Message msg, Map<String, Object> msgContext) {
+        if (msg != null && msg.isEnable()) {
+            Bukkit.broadcastMessage(msg.getMessage().resolve(msgContext));
+        }
+    }
+
+    private void notify(CommandSender sender, Message msg, ItemStack showItemStack, Map<String, Object> msgContext) {
+        if (msg != null && msg.isEnable()) {
+            RawMessage.createRawMessage(msg.getMessage().resolve(msgContext))
+                    .showItem(showItemStack)
+                    .send(sender);
+        }
+    }
+
+    private void notify(CommandSender sender, Message msg, Map<String, Object> msgContext) {
+        if (msg != null && msg.isEnable()) {
+            sender.sendMessage(msg.getMessage().resolve(msgContext));
+        }
+    }
+
+    private void notifyNotEnoughMoney(CommandSender sender, long money) {
+        Message msg = messages.getRequireMony();
+        if (msg != null && msg.isEnable()) {
+            sender.sendMessage(msg.getMessage().builder().var("money", money).build());
         }
     }
 }
