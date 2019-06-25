@@ -81,21 +81,21 @@
     <update id="updateShopItemAfterDeal">
         update taobao_shop_item
         set
-            TOTAL_DEAL_COST  = (select IFNULL(sum(dl.cost), 0)
+            TOTAL_DEAL_COST  = (select _cost.v from (select IFNULL(sum(dl.cost), 0) as v
                                 from taobao_shop_item _si left join taobao_deal_log dl on dl.shop_item_id = _si.id
                                 where _si.id = #{shopItemId} and _si.deleted = 0 and dl.deleted = 0
-                                group by _si.id),
-            TOTAL_DEAL_COUNT = (select IFNULL(sum(dl.count), 0)
+                                group by _si.id) as _cost),
+            TOTAL_DEAL_COUNT = (select _count.v from (select IFNULL(sum(dl.count), 0) as v
                                 from taobao_shop_item _si left join taobao_deal_log dl on dl.shop_item_id = _si.id
                                 where _si.id = #{shopItemId} and _si.deleted = 0 and dl.deleted = 0
-                                group by _si.id),
+                                group by _si.id) as _count),
             `COUNT`          = #{count}
         where id = #{shopItemId} and deleted = 0
     </update>
 
     <insert id="insertDealLog" useGeneratedKeys="true" keyProperty="id">
-        insert taobao_deal_log (shop_id, shot_item_type, shop_item_id, player, count, cost, tax, day)
-        values (#{shopId}, #{type}, #{shopItemId}, #{player}, #{count}, #{cost}, #{tax}, #{day})
+        insert taobao_deal_log (shop_id, shot_item_type, shop_item_id, player, count, cost, tax, day, created)
+        values (#{shopId}, #{type}, #{shopItemId}, #{player}, #{count}, #{cost}, #{tax}, #{day}, now())
     </insert>
 
     <select id="fetchShopItemByOrder" resultType="lol.clann.minecraft.plugin.taobao.model.domain.ShopItem">
@@ -160,9 +160,9 @@
         where shop_id = #{id} and type = #{type} and deleted = 0
     </select>
     <insert id="insertShopItem" useGeneratedKeys="true" keyProperty="id">
-        insert into taobao_shop_item (shop_id, type, price, count, max_count, item, total_deal_count, total_deal_cost, `order`)
+        insert into taobao_shop_item (shop_id, type, price, count, max_count, item, total_deal_count, total_deal_cost, `order`, created)
         values (#{shopId}, #{type}, #{price}, #{count}, #{maxCount}, #{item}, #{totalDealCount}, #{totalDealCost},
-                #{order})
+                #{order} , now())
     </insert>
 
     <update id="deleteShopItem">
@@ -194,9 +194,9 @@
     </update>
 
     <insert id="insertShop" useGeneratedKeys="true" keyProperty="id">
-        insert into taobao_shop (sys, owner, title, icon, goods_sale_count, goods_buy_count, total_sale_count, total_sale_cost, total_buy_count, total_buy_cost, total_cost)
+        insert into taobao_shop (sys, owner, title, icon, goods_sale_count, goods_buy_count, total_sale_count, total_sale_cost, total_buy_count, total_buy_cost, total_cost, created)
         values (#{sys}, #{owner}, #{title}, #{icon}, #{goodsSaleCount}, #{goodsBuyCount}, #{totalSaleCount},
-            #{totalSaleCost}, #{totalBuyCount}, #{totalBuyCost}, #{totalCost})
+            #{totalSaleCost}, #{totalBuyCount}, #{totalBuyCost}, #{totalCost}, now())
     </insert>
 
     <select id="fetchShopItemByIdForUpdate" resultType="lol.clann.minecraft.plugin.taobao.model.domain.ShopItem">
@@ -246,31 +246,31 @@
             goods_buy_count  = (select count(*)
                                 from taobao_shop_item
                                 where deleted = 0 and shop_id = #{shopId} and `type` = 'buy'
-                                group by shop_id),
+                                ),
             goods_sale_count = (select count(*)
                                 from taobao_shop_item
                                 where deleted = 0 and shop_id = #{shopId} and `type` = 'sale'
-                                group by shop_id),
-            total_buy_count  = (select sum(total_buy_count)
+                                ),
+            total_buy_count  = (select sum(total_deal_count)
                                 from taobao_shop_item
                                 where deleted = 0 and shop_id = #{shopId} and `type` = 'buy'
-                                group by shop_id),
-            total_sale_count = (select sum(total_sale_count)
+                                ),
+            total_sale_count = (select sum(total_deal_count)
                                 from taobao_shop_item
                                 where deleted = 0 and shop_id = #{shopId} and `type` = 'sale'
-                                group by shop_id),
-            total_buy_cost   = (select sum(total_buy_cost)
+                                ),
+            total_buy_cost   = (select sum(total_deal_cost)
                                 from taobao_shop_item
                                 where deleted = 0 and shop_id = #{shopId} and `type` = 'buy'
-                                group by shop_id),
-            total_sale_cost  = (select sum(total_sale_cost)
+                                ),
+            total_sale_cost  = (select sum(total_deal_cost)
                                 from taobao_shop_item
                                 where deleted = 0 and shop_id = #{shopId} and `type` = 'sale'
-                                group by shop_id),
-            total_cost       = (select sum(total_buy_cost) + sum(total_sale_cost)
+                                ),
+            total_cost       = (select sum(total_deal_cost)
                                 from taobao_shop_item
                                 where deleted = 0 and shop_id = #{shopId}
-                                group by shop_id)
+                                )
         where id = #{shopId}
     </update>
 
