@@ -90,6 +90,6 @@ public class Messages {
 
     @TranslateColoreCode
     @Configure(value = "taobao.msg.buy.notifyOwner", comment = "购买成功,通知店主的消息通知")
-    private Message buyNotifyOwner = new Message(true, "${player}从您的商店购买了${count}个${name},交易额:${cost},缴税:${tax},收入:${incone}");
+    private Message buyNotifyOwner = new Message(true, "${player}从您的商店购买了${count}个${name},交易额:${cost},缴税:${tax},收入:${income}");
 
 }

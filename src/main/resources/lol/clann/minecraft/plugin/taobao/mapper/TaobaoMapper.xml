@@ -251,23 +251,23 @@
                                 from taobao_shop_item
                                 where deleted = 0 and shop_id = #{shopId} and `type` = 'sale'
                                 ),
-            total_buy_count  = (select sum(total_deal_count)
+            total_buy_count  = (select IFNULL(sum(total_deal_count), 0)
                                 from taobao_shop_item
                                 where deleted = 0 and shop_id = #{shopId} and `type` = 'buy'
                                 ),
-            total_sale_count = (select sum(total_deal_count)
+            total_sale_count = (select IFNULL(sum(total_deal_count), 0)
                                 from taobao_shop_item
                                 where deleted = 0 and shop_id = #{shopId} and `type` = 'sale'
                                 ),
-            total_buy_cost   = (select sum(total_deal_cost)
+            total_buy_cost   = (select IFNULL(sum(total_deal_cost), 0)
                                 from taobao_shop_item
                                 where deleted = 0 and shop_id = #{shopId} and `type` = 'buy'
                                 ),
-            total_sale_cost  = (select sum(total_deal_cost)
+            total_sale_cost  = (select IFNULL(sum(total_deal_cost), 0)
                                 from taobao_shop_item
                                 where deleted = 0 and shop_id = #{shopId} and `type` = 'sale'
                                 ),
-            total_cost       = (select sum(total_deal_cost)
+            total_cost       = (select IFNULL(sum(total_deal_cost), 0)
                                 from taobao_shop_item
                                 where deleted = 0 and shop_id = #{shopId}
                                 )
