@@ -12,6 +12,7 @@ import lol.clann.minecraft.springboot.adapter.core.Plugin;
 import lol.clann.minecraft.springboot.adapter.utils.ConfigUtils;
 import ninja.leaping.configurate.objectmapping.ObjectMappingException;
 import org.bukkit.ChatColor;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -70,6 +71,27 @@ public class TaobaoCommand {
             async = true)
     private void open(@Sender Player player, @Optional Integer page) throws ExecutionException, InterruptedException {
         taobaoGuiManager.openShopMenu(player, Math.max(page == null ? 1 : page, 1));
+    }
+
+    /**
+     * 打开淘宝商城
+     *
+     * @param player
+     */
+    @Command(onlyPlayer = true,
+            onlyOp = false,
+            showArgs = "openShop <owner> <buy|sale> [<page>]",
+            cooldown = 1000,
+            concurrentLevel = CommandConcurrentLevelEnum.SENDER,
+            des = "打开指定店铺",
+            async = true)
+    private void openShop(@Sender Player player, OfflinePlayer owner, ShopTypeEnum type, @Optional Integer page) throws ExecutionException, InterruptedException {
+        if (page == null) {
+            page = 1;
+        } else if (page <= 0) {
+            page = 1;
+        }
+        taobaoGuiManager.openShop(player, owner.getName(), type, page);
     }
 
     @Command(onlyPlayer = true,

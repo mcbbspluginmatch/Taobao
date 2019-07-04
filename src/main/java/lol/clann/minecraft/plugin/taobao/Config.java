@@ -1,6 +1,7 @@
 package lol.clann.minecraft.plugin.taobao;
 
 import lol.clann.minecraft.springboot.adapter.api.config.Configure;
+import lol.clann.minecraft.springboot.adapter.bukkit.model.ItemStackBuilder;
 import lol.clann.minecraft.springboot.adapter.bukkit.utils.ItemStackUtils;
 import lol.clann.minecraft.springboot.adapter.context.SpringContext;
 import lol.clann.minecraft.springboot.adapter.model.LazyField;
@@ -25,16 +26,16 @@ public class Config {
 
     @Setter
     @Configure(value = "taobao.icon.prePage", comment = "上一页按钮")
-    private ItemStack prePageButton = itemStackUtils.get().asCraftItemStackCopy(new ItemStack(Material.DIAMOND));
+    private ItemStack prePageButton = ItemStackBuilder.builder(Material.DIAMOND).displayName("§2上一页").build();
     @Setter
     @Configure(value = "taobao.icon.nextPage", comment = "下一页按钮")
-    private ItemStack nextPageButton = itemStackUtils.get().asCraftItemStackCopy(new ItemStack(Material.DIAMOND));
+    private ItemStack nextPageButton = ItemStackBuilder.builder(Material.DIAMOND).displayName("§2下一页").build();
     @Setter
     @Configure(value = "taobao.icon.goBackMenu", comment = "返回主菜单按钮")
-    private ItemStack goBackMenuButton = itemStackUtils.get().asCraftItemStackCopy(new ItemStack(Material.DIAMOND));
+    private ItemStack goBackMenuButton = ItemStackBuilder.builder(Material.DIAMOND).displayName("§2返回主菜单").build();
     @Setter
     @Configure(value = "taobao.icon.refreshButton", comment = "刷新gui的按钮")
-    private ItemStack refreshButton = itemStackUtils.get().asCraftItemStackCopy(new ItemStack(Material.DIAMOND));
+    private ItemStack refreshButton = ItemStackBuilder.builder(Material.DIAMOND).displayName("§2刷新").build();
     @Configure(value = "taobao.tax.buyShop", comment = "收购商店交易税率")
     private double buyShopTax = 0.1;
     @Configure(value = "taobao.tax.saleShop", comment = "出售商店交易税率")

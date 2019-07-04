@@ -9,6 +9,7 @@ import lol.clann.minecraft.springboot.adapter.bukkit.utils.MenuUtils;
 import lol.clann.minecraft.springboot.adapter.bukkit.utils.ServerUtils;
 import lol.clann.minecraft.springboot.adapter.model.menu.Menu;
 import lol.clann.minecraft.springboot.adapter.model.menu.constant.MenuClickConcurrentLevelEnum;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
