@@ -1,8 +1,9 @@
 package lol.clann.minecraft.plugin.taobao.message;
 
 import com.google.common.collect.Lists;
-import lol.clann.minecraft.springboot.adapter.api.config.Configure;
-import lol.clann.minecraft.springboot.adapter.api.config.TranslateColoreCode;
+import lol.clann.minecraft.springboot.api.annotation.config.Configure;
+import lol.clann.minecraft.springboot.api.annotation.config.TranslateColoreCode;
+import lol.clann.minecraft.springboot.api.model.message.MessageBuilder;
 import lombok.Getter;
 import org.springframework.stereotype.Service;
 
@@ -21,7 +22,7 @@ public class Messages {
     private Message newSaleBroadcast = new Message(true, "玩家${player}上架了出售商品:${name}");
     @TranslateColoreCode
     @Configure(value = "taobao.msg.newSale.msg", comment = "上架新商品的提示信息")
-    private Message newSale = new Message(true, "恭喜您,上架出售商品成功,商品ID:${id},手续费:${cost}");
+    private Message newSale = new Message(true, "恭喜您,上架出售商品成功,商品ID:${id},手续费:${money}");
     @TranslateColoreCode
     @Configure(value = "taobao.msg.notEnoughMony", comment = "余额不足的提示信息")
     private Message notEnoughMony = new Message(true, "余额不足");
@@ -34,7 +35,7 @@ public class Messages {
     private Message newBuyBroadcast = new Message(true, "玩家${player}上架了收购商品:${name}");
     @TranslateColoreCode
     @Configure(value = "taobao.msg.newBuy.msg", comment = "上架新商品的提示信息")
-    private Message newBuy = new Message(true, "恭喜您,上架收购商品成功,商品ID:${id},手续费:${cost}");
+    private Message newBuy = new Message(true, "恭喜您,上架收购商品成功,商品ID:${id},手续费:${money}");
 
     @TranslateColoreCode
     @Configure(value = "taobao.msg.deleteShopItem.msg", comment = "下架商品的提示信息")
@@ -94,6 +95,22 @@ public class Messages {
     @TranslateColoreCode
     @Configure(value = "taobao.msg.buy.notifyOwner", comment = "购买成功,通知店主的消息通知")
     private Message buyNotifyOwner = new Message(true, "${player}从您的商店购买了${count}个${name},交易额:${cost},缴税:${tax},收入:${income}");
+
+    @TranslateColoreCode
+    @Configure(value = "taobao.msg.newSale.rule.canNotSale", comment = "尝试上架禁止出售的商品时的提示信息")
+    private MessageBuilder canNotSale = MessageBuilder.from("此物禁止出售!");
+
+    @TranslateColoreCode
+    @Configure(value = "taobao.msg.newSale.rule.priceToLow", comment = "尝试上架禁止出售的商品售价过低时的提示信息")
+    private MessageBuilder priceTooLow = MessageBuilder.from("上架失败,此物品允许的最低售价为:${price}");
+
+    @TranslateColoreCode
+    @Configure(value = "taobao.msg.newSale.rule.illegalName", comment = "尝试上架禁止出售的商品名字包含违禁关键字时的提示信息")
+    private MessageBuilder illegalName = MessageBuilder.from("上架失败,此物品名字包含违禁关键字:${keywords}");
+
+    @TranslateColoreCode
+    @Configure(value = "taobao.msg.newSale.rule.illegalLore", comment = "尝试上架禁止出售的商品Lore包含违禁关键字时的提示信息")
+    private MessageBuilder illegalLore = MessageBuilder.from("上架失败,此物品Lore包含违禁关键字:${keywords}");
 
 
     @TranslateColoreCode

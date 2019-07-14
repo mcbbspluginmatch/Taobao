@@ -1,7 +1,7 @@
 package lol.clann.minecraft.plugin.taobao.message;
 
-import lol.clann.minecraft.springboot.adapter.api.config.TranslateColoreCode;
-import lol.clann.minecraft.springboot.adapter.model.message.MessageBuilder;
+import lol.clann.minecraft.springboot.api.annotation.config.TranslateColoreCode;
+import lol.clann.minecraft.springboot.api.model.message.MessageBuilder;
 import lombok.Getter;
 import ninja.leaping.configurate.objectmapping.Setting;
 import ninja.leaping.configurate.objectmapping.serialize.ConfigSerializable;

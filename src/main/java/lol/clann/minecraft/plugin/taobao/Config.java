@@ -1,16 +1,21 @@
 package lol.clann.minecraft.plugin.taobao;
 
-import lol.clann.minecraft.springboot.adapter.api.config.Configure;
-import lol.clann.minecraft.springboot.adapter.bukkit.model.ItemStackBuilder;
-import lol.clann.minecraft.springboot.adapter.bukkit.utils.ItemStackUtils;
-import lol.clann.minecraft.springboot.adapter.context.SpringContext;
-import lol.clann.minecraft.springboot.adapter.model.LazyField;
+import lol.clann.minecraft.plugin.taobao.model.domain.DealRule;
+import lol.clann.minecraft.springboot.api.annotation.config.Configure;
+import lol.clann.minecraft.springboot.api.bukkit.model.ItemStackBuilder;
+import lol.clann.minecraft.springboot.api.bukkit.utils.ItemStackUtils;
+import lol.clann.minecraft.springboot.api.context.SpringContext;
+import lol.clann.minecraft.springboot.api.model.LazyField;
+import lol.com.google.common.collect.Lists;
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
@@ -42,7 +47,7 @@ public class Config {
     private double saleShopTax = 0.1;
     @Configure(value = "taobao.tax.putStock", comment = "增加出售商店库存时的库存税(主要目的是防止玩家把商店当成仓库)")
     private double putStockTax = 0.05;
-    @Configure(value = "taobao.taxReceiver", comment = "如果设置了这个,会把税转到指定玩家身上")
+    @Configure(value = "taobao.taxReceiver", comment = "如果设置了这个,会把税转到指定玩家身上,通常设置为系统商店所有者")
     private String taxReceiver = "";
     /**
      * cost为玩家在系统商店的当日交易额
@@ -64,4 +69,30 @@ public class Config {
     private long setShopNameCost = 10000;
     @Configure(value = "taobao.cost.setOrderCost", comment = "变更物品序号的手续费")
     private long setOrderCost = 10000;
+    @Configure(value = "taobao.newSale.rule.dealRules", comment = "出售规则,可用来禁止物品出售或者限制最低售价")
+    private List<DealRule> dealRules = new ArrayList<>();
+    @Configure(value = "taobao.newSale.rule.rejectItemNames", comment = "名字黑名单,每条规则可以包含多个关键字,物品的名字同时包含某个规则的所有关键字,就禁止出售.")
+    private List<List<String>> rejectItemNames = new ArrayList<>();
+    @Configure(value = "taobao.newSale.rule.rejectItemLores", comment = "lore黑名单,每条规则可以包含多个关键字,物品的lore同时包含某个规则的所有关键字,就禁止出售.")
+    private List<List<String>> rejectItemLores = new ArrayList<>();
+
+    {
+        rejectItemNames.add(Lists.newArrayList("§o", "点券"));
+        rejectItemNames.add(Lists.newArrayList("节操"));
+        rejectItemNames.add(Lists.newArrayList("国王"));
+        rejectItemNames.add(Lists.newArrayList("服主"));
+        rejectItemNames.add(Lists.newArrayList("淘宝"));
+        rejectItemNames.add(Lists.newArrayList("腾讯"));
+        rejectItemNames.add(Lists.newArrayList("京东"));
+        rejectItemNames.add(Lists.newArrayList("爸爸"));
+
+        rejectItemLores.add(Lists.newArrayList("§o", "点券"));
+        rejectItemLores.add(Lists.newArrayList("节操"));
+        rejectItemLores.add(Lists.newArrayList("国王"));
+        rejectItemLores.add(Lists.newArrayList("服主"));
+        rejectItemLores.add(Lists.newArrayList("淘宝"));
+        rejectItemLores.add(Lists.newArrayList("腾讯"));
+        rejectItemLores.add(Lists.newArrayList("京东"));
+        rejectItemLores.add(Lists.newArrayList("爸爸"));
+    }
 }

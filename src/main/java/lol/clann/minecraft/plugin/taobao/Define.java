@@ -1,7 +1,7 @@
 package lol.clann.minecraft.plugin.taobao;
 
 import com.google.auto.service.AutoService;
-import lol.clann.minecraft.springboot.adapter.api.plugin.PluginDefine;
+import lol.clann.minecraft.springboot.api.spi.plugin.PluginDefine;
 
 /**
  *

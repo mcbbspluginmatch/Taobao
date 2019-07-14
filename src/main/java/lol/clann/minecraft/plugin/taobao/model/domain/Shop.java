@@ -3,20 +3,17 @@ package lol.clann.minecraft.plugin.taobao.model.domain;
 import com.ruoshui.utils.java.datetime.DateTimeUtils;
 import lol.clann.minecraft.plugin.taobao.Config;
 import lol.clann.minecraft.plugin.taobao.message.Messages;
-import lol.clann.minecraft.springboot.adapter.bukkit.utils.ItemStackUtils;
-import lol.clann.minecraft.springboot.adapter.context.SpringContext;
-import lol.clann.minecraft.springboot.adapter.model.LazyField;
-import lol.clann.minecraft.springboot.adapter.model.Lores;
-import lol.clann.minecraft.springboot.adapter.model.message.MessageBuilder;
+import lol.clann.minecraft.springboot.api.bukkit.utils.ItemStackUtils;
+import lol.clann.minecraft.springboot.api.context.SpringContext;
+import lol.clann.minecraft.springboot.api.model.LazyField;
+import lol.clann.minecraft.springboot.api.model.Lores;
+import lol.clann.minecraft.springboot.api.model.message.MessageBuilder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  *
@@ -43,14 +40,14 @@ public class Shop {
     private long totalBuyCost;
     private long totalCost;
     private ItemStack icon;
-    private Date updated;
+    private Date updated = new Date();
 
     public ItemStack toIcon() {
         ItemStack icon = this.icon.clone();
         itemStackUtils.get().setDisplayName(icon, title);
-        Lores lores = itemStackUtils.get().getLore(icon);
+        List<String> lores = itemStackUtils.get().getLore(icon);
         if (lores == null) {
-            lores = new Lores();
+            lores = new ArrayList<>();
         }
         List<String> loreTexts = messages.get().getShopIconLores();
         if (loreTexts == null || loreTexts.isEmpty()) {

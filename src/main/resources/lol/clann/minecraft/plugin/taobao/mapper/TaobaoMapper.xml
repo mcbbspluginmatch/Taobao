@@ -94,7 +94,7 @@
     </update>
 
     <insert id="insertDealLog" useGeneratedKeys="true" keyProperty="id">
-        insert taobao_deal_log (shop_id, shot_item_type, shop_item_id, player, count, cost, tax, day, created)
+        insert into taobao_deal_log (shop_id, shot_item_type, shop_item_id, player, count, cost, tax, day, created)
         values (#{shopId}, #{type}, #{shopItemId}, #{player}, #{count}, #{cost}, #{tax}, #{day}, now())
     </insert>
 

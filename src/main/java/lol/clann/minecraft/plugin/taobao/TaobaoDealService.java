@@ -5,13 +5,14 @@ import lol.clann.minecraft.plugin.taobao.mapper.TaobaoMapper;
 import lol.clann.minecraft.plugin.taobao.message.Message;
 import lol.clann.minecraft.plugin.taobao.message.Messages;
 import lol.clann.minecraft.plugin.taobao.model.domain.DealLog;
+import lol.clann.minecraft.plugin.taobao.model.domain.DealRule;
 import lol.clann.minecraft.plugin.taobao.model.domain.Shop;
 import lol.clann.minecraft.plugin.taobao.model.domain.ShopItem;
-import lol.clann.minecraft.springboot.adapter.bukkit.rawmessage.RawMessage;
-import lol.clann.minecraft.springboot.adapter.bukkit.utils.InventoryUtils;
-import lol.clann.minecraft.springboot.adapter.bukkit.utils.ItemStackUtils;
-import lol.clann.minecraft.springboot.adapter.bukkit.utils.JSUtils;
-import lol.clann.minecraft.springboot.adapter.bukkit.utils.MenuUtils;
+import lol.clann.minecraft.springboot.api.bukkit.rawmessage.RawMessage;
+import lol.clann.minecraft.springboot.api.bukkit.utils.*;
+import lol.clann.minecraft.springboot.api.model.LazyField;
+import lol.clann.minecraft.springboot.api.model.Result;
+import lombok.extern.slf4j.Slf4j;
 import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.economy.EconomyResponse;
 import org.bukkit.Bukkit;
@@ -22,6 +23,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.RegisteredServiceProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,6 +34,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 /**
  * 负责交易
@@ -39,9 +42,10 @@ import java.util.Map;
  * @author pyz
  * @date 2019/6/5 10:40 PM
  */
+@Slf4j
 @Service
 public class TaobaoDealService {
-    private Economy economy;
+    private LazyField<Economy> economy;
     @Autowired
     private TaobaoMapper taobaoMapper;
     @Autowired
@@ -56,16 +60,23 @@ public class TaobaoDealService {
     private JSUtils jsUtils;
     @Autowired
     private Messages messages;
+    @Autowired
+    private ServerUtils serverUtils;
 
     private String noShopMsg = ChatColor.RED + "店铺不存在";
 
     @PostConstruct
     private void init() {
-        economy = Bukkit.getServicesManager().getRegistration(Economy.class).getProvider();
+        RegisteredServiceProvider<Economy> svc = Bukkit.getServicesManager().getRegistration(Economy.class);
+        if (svc == null || svc.getProvider() == null) {
+            LOGGER.error("未检测到经济插件,淘宝商城无法正常工作!");
+            return;
+        }
+        economy = LazyField.of(() -> svc.getProvider());
     }
 
     @Transactional(rollbackFor = Throwable.class)
-    public void buy(Player player, InventoryClickEvent event, long shopItemId, int count) {
+    public void buy(Player player, InventoryClickEvent event, long shopItemId, int count) throws ExecutionException, InterruptedException {
         if (count == -1) {
             count = Integer.MAX_VALUE;
         }
@@ -99,7 +110,7 @@ public class TaobaoDealService {
         shopItem.getItem().setAmount(1);
         count = Math.min(count, shopItem.getCount());
         count = Math.min(count, invCapability);
-        long maxBuyCount = (long) economy.getBalance(player) / shopItem.getPrice();
+        long maxBuyCount = (long) economy.get().getBalance(player) / shopItem.getPrice();
         if (maxBuyCount <= 0) {
             notify(player, messages.getNotEnoughMony(), new HashMap<>());
             return;
@@ -107,19 +118,11 @@ public class TaobaoDealService {
         count = (int) Math.min(count, maxBuyCount);
         long cost = count * shopItem.getPrice();
         long tax = (long) Math.ceil(config.getSaleShopTax() * cost);
-        EconomyResponse r = economy.withdrawPlayer(player, cost);
-        if (!r.transactionSuccess()) {
-            player.sendMessage(ChatColor.RED + "扣款失败!");
+        boolean success = transform(player, cost, owner, cost - tax, true);
+        if (!success) {
+            player.sendMessage(ChatColor.RED + "转账失败!");
             return;
         }
-        r = economy.depositPlayer(owner, cost - tax);
-        if (!r.transactionSuccess()) {
-            player.sendMessage(ChatColor.RED + "向店主转账失败!");
-            economy.depositPlayer(player, cost);
-            return;
-        }
-//        交易税转账
-        depositTaxReceiver(tax);
 //        更新商品信息
         shopItem.setCount(shopItem.getCount() - count);
 //        生成日志
@@ -168,7 +171,7 @@ public class TaobaoDealService {
     }
 
     @Transactional(rollbackFor = Throwable.class)
-    public void sale(Player player, InventoryClickEvent event, long shopItemId, int count) {
+    public void sale(Player player, InventoryClickEvent event, long shopItemId, int count) throws ExecutionException, InterruptedException {
         if (count == -1) {
             count = Integer.MAX_VALUE;
         }
@@ -201,7 +204,7 @@ public class TaobaoDealService {
             player.sendMessage(ChatColor.RED + "背包中没有该商品!");
             return;
         }
-        long banlance = (long) economy.getBalance(owner);
+        long banlance = (long) economy.get().getBalance(owner);
         int maxSaleCount = (int) (banlance / shopItem.getPrice());
         if (maxSaleCount == 0) {
             notify(player, messages.getNotEnoughMony(), new HashMap<>());
@@ -227,19 +230,11 @@ public class TaobaoDealService {
 //            玩家商店静态税率
             tax = (long) Math.ceil((config.getBuyShopTax() * cost));
         }
-        EconomyResponse r = economy.withdrawPlayer(owner, cost);
-        if (!r.transactionSuccess()) {
-            player.sendMessage(ChatColor.RED + "店主扣款失败!");
+        boolean success = transform(owner, cost, player, cost - tax, true);
+        if (!success) {
+            player.sendMessage(ChatColor.RED + "转账失败!");
             return;
         }
-        r = economy.depositPlayer(player, cost - tax);
-        if (!r.transactionSuccess()) {
-            player.sendMessage(ChatColor.RED + "收款失败!");
-            economy.depositPlayer(owner, cost);
-            return;
-        }
-//        交易税转账
-        depositTaxReceiver(tax);
 //        更新商品信息
         shopItem.setCount(shopItem.getCount() + count);
 //        生成日志
@@ -275,7 +270,7 @@ public class TaobaoDealService {
     }
 
     @Transactional(rollbackFor = Throwable.class)
-    public void setOrder(Player player, long shopItemId, int order) {
+    public void setOrder(Player player, long shopItemId, int order) throws ExecutionException, InterruptedException {
         ShopItem shopItem = taobaoMapper.fetchShopItemByIdForUpdate(shopItemId);
         if (!shopItem.getOwner().equals(player.getName())) {
             player.sendMessage(ChatColor.RED + "这不是您的商店");
@@ -291,7 +286,7 @@ public class TaobaoDealService {
         msgContext.put("${id}", shopItemId);
         msgContext.put("${order}", order);
 
-        if (withdrawPlayer(player, config.getSetOrderCost(), true)) {
+        if (transform(player, config.getSetOrderCost(), null, 0, true)) {
             taobaoMapper.update(shopItem);
             notify(player, messages.getSetOrder(), msgContext);
         } else {
@@ -300,16 +295,16 @@ public class TaobaoDealService {
     }
 
     @Transactional(rollbackFor = Throwable.class)
-    public void newSale(Player player, long price) {
+    public void newSale(Player player, long price) throws ExecutionException, InterruptedException {
         newShopItem(player, ShopTypeEnum.sale, price, Integer.MAX_VALUE);
     }
 
     @Transactional(rollbackFor = Throwable.class)
-    public void newBuy(Player player, long price, int maxCount) {
+    public void newBuy(Player player, long price, int maxCount) throws ExecutionException, InterruptedException {
         newShopItem(player, ShopTypeEnum.buy, price, maxCount);
     }
 
-    private void newShopItem(Player player, ShopTypeEnum type, long price, int maxCount) {
+    private void newShopItem(Player player, ShopTypeEnum type, long price, int maxCount) throws ExecutionException, InterruptedException {
         if (price <= 0) {
             player.sendMessage(ChatColor.RED + "价格必须为整正数!");
             return;
@@ -325,6 +320,16 @@ public class TaobaoDealService {
         }
         item = item.clone();
         item.setAmount(1);
+
+        {
+//        判断是否可以出售
+            Result r = canSale(player, item, price);
+            if (r.isFail()) {
+                player.sendMessage(r.getErrorMsg());
+                return;
+            }
+        }
+
         Shop shop = fetchShopByOwnerForUpdate(player, player.getName(), noShopMsg);
         if (shop == null) {
             return;
@@ -346,7 +351,7 @@ public class TaobaoDealService {
         msgContext.put("${type}", shopItem.getType().getDisplayName());
         msgContext.put("${money}", newShopItemCost);
 
-        if (withdrawPlayer(player, newShopItemCost, true)) {
+        if (transform(player, newShopItemCost, null, 0, true)) {
             taobaoMapper.insertShopItem(shopItem);
             refreshShopStatistics(shopItem.getShopId());
 
@@ -392,6 +397,7 @@ public class TaobaoDealService {
         msgContext.put("${id}", shopItemId);
         msgContext.put("${name}", itemStackUtils.getDisplayName(shopItem.getItem()));
         msgContext.put("${type}", shopItem.getType().getDisplayName());
+
         notify(player, messages.getDeleteShopItem(), msgContext);
         broadcast(messages.getDeleteShopItemBroadcast(), shopItem.toIcon(), msgContext);
     }
@@ -418,7 +424,7 @@ public class TaobaoDealService {
     }
 
     @Transactional(rollbackFor = Throwable.class)
-    public void putStock(Player player, InventoryClickEvent event, long shopItemId, int putCount) {
+    public void putStock(Player player, InventoryClickEvent event, long shopItemId, int putCount) throws ExecutionException, InterruptedException {
         if (putCount == -1) {
             putCount = Integer.MAX_VALUE;
         }
@@ -459,7 +465,7 @@ public class TaobaoDealService {
         msgContext.put("${type}", shopItem.getType().getDisplayName());
         msgContext.put("${name}", itemStackUtils.getDisplayName(shopItem.getItem()));
 
-        if (!withdrawPlayer(player, tax, true)) {
+        if (!transform(player, tax, null, 0, true)) {
             notify(player, messages.getRequireMony(), msgContext);
             return;
         }
@@ -528,7 +534,7 @@ public class TaobaoDealService {
     }
 
     @Transactional(rollbackFor = Throwable.class)
-    public void setShopName(Player player, String name) {
+    public void setShopName(Player player, String name) throws ExecutionException, InterruptedException {
         Shop shop = fetchShopByOwnerForUpdate(player, player.getName(), noShopMsg);
         if (shop == null) {
             player.sendMessage(String.format(ChatColor.RED + "该玩家没有商店:", name));
@@ -538,17 +544,19 @@ public class TaobaoDealService {
         Map<String, Object> msgContext = new HashMap<>();
         msgContext.put("${player}", player.getName());
         msgContext.put("${name}", name);
-        if (withdrawPlayer(player, config.getSetShopNameCost(), true)) {
+        long cost = config.getSetShopNameCost();
+        msgContext.put("${cost}", cost);
+        if (transform(player, cost, null, 0, true)) {
             taobaoMapper.updateShop(shop);
             notify(player, messages.getRenameShop(), msgContext);
-            broadcast(messages.getRenameShopBroadcast(), shop.getIcon(), msgContext);
+            broadcast(messages.getRenameShopBroadcast(), shop.toIcon(), msgContext);
         } else {
             notifyNotEnoughMoney(player, config.getSetShopNameCost());
         }
     }
 
     @Transactional(rollbackFor = Throwable.class)
-    public void createShop(Player player, String name) {
+    public void createShop(Player player, String name) throws ExecutionException, InterruptedException {
         Long shopId = taobaoMapper.fetchShopIdByOwner(player.getName());
         if (shopId != null) {
             player.sendMessage(ChatColor.RED + "店铺已存在,请勿重复操作");
@@ -556,26 +564,27 @@ public class TaobaoDealService {
         }
         Shop shop = new Shop();
         shop.setTitle(ChatColor.GREEN + name + ChatColor.WHITE);
-        shop.setIcon(itemStackUtils.asCraftItemStackCopy(new ItemStack(Material.STONE)));
+        shop.setIcon(itemStackUtils.asCraftCopy(new ItemStack(Material.STONE)));
         shop.setOwner(player.getName());
 
         Map<String, Object> msgContext = new HashMap<>();
         msgContext.put("${player}", player.getName());
         msgContext.put("${money}", config.getCreateShopCost());
         msgContext.put("${name}", name);
-
-        if (withdrawPlayer(player, config.getCreateShopCost(), true)) {
+        long cost = config.getCreateShopCost();
+        msgContext.put("${cost}", cost);
+        if (transform(player, cost, null, 0, true)) {
             taobaoMapper.insertShop(shop);
             msgContext.put("${id}", shop.getId());
             notify(player, messages.getCreateShop(), msgContext);
-            broadcast(messages.getCreateShopBroadcast(), shop.getIcon(), msgContext);
+            broadcast(messages.getCreateShopBroadcast(), shop.toIcon(), msgContext);
         } else {
             notify(player, messages.getRequireMony(), msgContext);
         }
     }
 
     @Transactional(rollbackFor = Throwable.class)
-    public void setIcon(Player player) {
+    public void setIcon(Player player) throws ExecutionException, InterruptedException {
         Shop shop = fetchShopByOwnerForUpdate(player, player.getName(), noShopMsg);
         if (shop == null) {
             player.sendMessage(ChatColor.RED + "您尚未开设商店,请输入指令查看帮助:/taobao");
@@ -596,8 +605,10 @@ public class TaobaoDealService {
         msgContext.put("${player}", player.getName());
         msgContext.put("${money}", config.getSetIconCost());
         msgContext.put("${name}", itemStackUtils.getDisplayName(shop.getIcon()));
+        long cost = config.getSetIconCost();
+        msgContext.put("${cost}", cost);
 
-        if (withdrawPlayer(player, config.getSetIconCost(), true)) {
+        if (transform(player, cost, null, 0, true)) {
             taobaoMapper.updateShop(shop);
             hand.setAmount(hand.getAmount() - 1);
             if (hand.getAmount() > 0) {
@@ -606,7 +617,7 @@ public class TaobaoDealService {
                 player.setItemInHand(null);
             }
             notify(player, messages.getSetShopIcon(), msgContext);
-            broadcast(messages.getSetShopIconBroadcast(), shop.getIcon(), msgContext);
+            broadcast(messages.getSetShopIconBroadcast(), shop.toIcon(), msgContext);
         } else {
             notify(player, messages.getRequireMony(), msgContext);
         }
@@ -639,25 +650,34 @@ public class TaobaoDealService {
         return shop;
     }
 
-    private boolean withdrawPlayer(OfflinePlayer player, double money, boolean transferToTaxReceiver) {
-        if (economy.has(player, money)) {
-            EconomyResponse r = economy.withdrawPlayer(player, money);
-            if (r.transactionSuccess() && transferToTaxReceiver) {
-                depositTaxReceiver(money);
+    private boolean transform(OfflinePlayer from, double withdrawMoney, OfflinePlayer to, double depositMoney, boolean transferToTaxReceiver) throws ExecutionException, InterruptedException {
+        return serverUtils.callSyncMethod(() -> {
+            EconomyResponse r;
+            if (from != null) {
+                r = economy.get().withdrawPlayer(from, withdrawMoney);
+                if (!r.transactionSuccess()) {
+                    return false;
+                }
             }
-            return r.transactionSuccess();
-        } else {
-            return false;
-        }
-    }
-
-    private void depositTaxReceiver(double money) {
-        if (config.getTaxReceiver() != null && !config.getTaxReceiver().isEmpty()) {
-            OfflinePlayer op = Bukkit.getOfflinePlayer(config.getTaxReceiver());
-            if (op != null) {
-                economy.depositPlayer(op, money);
+            if (to != null) {
+                r = economy.get().depositPlayer(to, depositMoney);
+                if (!r.transactionSuccess()) {
+                    if (from != null) {
+                        economy.get().depositPlayer(from, withdrawMoney);
+                    }
+                    return false;
+                }
             }
-        }
+            if (transferToTaxReceiver && withdrawMoney > depositMoney) {
+                if (config.getTaxReceiver() != null && !config.getTaxReceiver().isEmpty()) {
+                    OfflinePlayer op = Bukkit.getOfflinePlayer(config.getTaxReceiver());
+                    if (op != null) {
+                        economy.get().depositPlayer(op, withdrawMoney - depositMoney);
+                    }
+                }
+            }
+            return true;
+        }).get();
     }
 
     private void broadcast(Message msg, ItemStack showItemStack, Map<String, Object> msgContext) {
@@ -693,5 +713,59 @@ public class TaobaoDealService {
         if (msg != null && msg.isEnable()) {
             sender.sendMessage(msg.getMessage().builder().var("money", money).build());
         }
+    }
+
+    private Result canSale(Player player, ItemStack itemStack, long price) {
+        for (DealRule dealRule : config.getDealRules()) {
+            if (!dealRule.match(player, itemStack)) {
+                continue;
+            }
+            if (!dealRule.isAllowSale()) {
+                return Result.fail(messages.getCanNotSale().getRawText());
+            }
+            if (price < dealRule.getMinPrice()) {
+                return Result.fail(messages.getPriceTooLow().builder().var("price", dealRule.getMinPrice()).build());
+            }
+        }
+        String name = itemStackUtils.getDisplayName(itemStack);
+        if (name == null) {
+            return Result.empty();
+        }
+        for (List<String> list : config.getRejectItemNames()) {
+            if (list.isEmpty()) {
+                continue;
+            }
+            int n = 0;
+            for (String s : list) {
+                if (name.contains(s)) {
+                    n++;
+                }
+            }
+            if (n == list.size()) {
+                return Result.fail(messages.getIllegalName().builder().var("keywords", list.toString().replace('§', '&')).build());
+            }
+        }
+        List<String> lores = itemStackUtils.getLore(itemStack);
+        if (lores != null && lores.isEmpty()) {
+            for (List<String> list : config.getRejectItemLores()) {
+                if (list.isEmpty()) {
+                    continue;
+                }
+                int n = 0;
+                for (String s : list) {
+                    for (String lore : lores) {
+                        if (lore.contains(s)) {
+                            n++;
+                            break;
+                        }
+                    }
+                }
+                if (n == list.size()) {
+                    return Result.fail(messages.getIllegalLore().builder().var("keywords", list.toString().replace('§', '&')).build());
+                }
+            }
+        }
+
+        return Result.empty();
     }
 }

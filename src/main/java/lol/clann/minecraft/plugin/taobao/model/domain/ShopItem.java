@@ -2,16 +2,17 @@ package lol.clann.minecraft.plugin.taobao.model.domain;
 
 import lol.clann.minecraft.plugin.taobao.constant.ShopTypeEnum;
 import lol.clann.minecraft.plugin.taobao.message.Messages;
-import lol.clann.minecraft.springboot.adapter.bukkit.utils.ItemStackUtils;
-import lol.clann.minecraft.springboot.adapter.context.SpringContext;
-import lol.clann.minecraft.springboot.adapter.model.LazyField;
-import lol.clann.minecraft.springboot.adapter.model.Lores;
-import lol.clann.minecraft.springboot.adapter.model.message.MessageBuilder;
+import lol.clann.minecraft.springboot.api.bukkit.utils.ItemStackUtils;
+import lol.clann.minecraft.springboot.api.context.SpringContext;
+import lol.clann.minecraft.springboot.api.model.LazyField;
+import lol.clann.minecraft.springboot.api.model.Lores;
+import lol.clann.minecraft.springboot.api.model.message.MessageBuilder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,9 +57,9 @@ public class ShopItem {
     public ItemStack toIcon() {
         ItemStack icon = item.clone();
         ItemStackUtils itemStackUtils = ShopItem.itemStackUtils.get();
-        Lores lores = itemStackUtils.getLore(icon);
+        List<String> lores = itemStackUtils.getLore(icon);
         if (lores == null) {
-            lores = new Lores();
+            lores = new ArrayList<>();
         }
         List<String> loreTexts;
         if (type == ShopTypeEnum.sale) {
@@ -80,9 +81,9 @@ public class ShopItem {
     public ItemStack toOwnerIcon() {
         ItemStack icon = item.clone();
         ItemStackUtils itemStackUtils = ShopItem.itemStackUtils.get();
-        Lores lores = itemStackUtils.getLore(icon);
+        List<String> lores = itemStackUtils.getLore(icon);
         if (lores == null) {
-            lores = new Lores();
+            lores = new ArrayList<>();
         }
         List<String> loreTexts;
         if (type == ShopTypeEnum.sale) {
