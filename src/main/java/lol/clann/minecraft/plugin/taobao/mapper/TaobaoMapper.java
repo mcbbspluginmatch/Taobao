@@ -4,7 +4,6 @@ import lol.clann.minecraft.plugin.taobao.constant.ShopTypeEnum;
 import lol.clann.minecraft.plugin.taobao.model.domain.DealLog;
 import lol.clann.minecraft.plugin.taobao.model.domain.Shop;
 import lol.clann.minecraft.plugin.taobao.model.domain.ShopItem;
-import lol.clann.minecraft.plugin.taobao.model.domain.ShopStatistics;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
@@ -62,5 +61,5 @@ public interface TaobaoMapper {
 
     void setAllShopItemCountAndCapabilityByShopId(long shopId);
 
-    void updateShopStatistics(@Param("shopId")long shopId);
+    void updateShopStatistics(@Param("shopId") long shopId);
 }
