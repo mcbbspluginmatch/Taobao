@@ -3,7 +3,7 @@ apply plugin: 'java'
 apply plugin: 'maven'
 
 group 'lol.clann.minecraft.plugin.sbp'
-version '0.0.7'
+version '0.0.8'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -27,3 +27,4 @@ check.dependsOn.remove(test)
 dependencies {
     compile fileTree("../bukkit-api/1.7")
 }
+jar.destinationDir = file("build/libs")

@@ -1,12 +1,10 @@
 package lol.clann.minecraft.plugin.taobao.command;
 
-import lol.clann.minecraft.plugin.taobao.Config;
 import lol.clann.minecraft.plugin.taobao.TaobaoDealService;
 import lol.clann.minecraft.plugin.taobao.TaobaoGuiManager;
 import lol.clann.minecraft.plugin.taobao.constant.ShopTypeEnum;
 import lol.clann.minecraft.springboot.api.annotation.command.*;
 import lol.clann.minecraft.springboot.api.bukkit.command.constant.CommandConcurrentLevelEnum;
-import lol.clann.minecraft.springboot.api.bukkit.utils.ItemStackUtils;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,10 +22,6 @@ public class TaobaoPlayerCommand {
     private TaobaoGuiManager taobaoGuiManager;
     @Autowired
     private TaobaoDealService taobaoDealService;
-    @Autowired
-    private Config config;
-    @Autowired
-    private ItemStackUtils itemStackUtils;
 
     /**
      * 创建商店

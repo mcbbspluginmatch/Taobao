@@ -2,9 +2,7 @@ package lol.clann.minecraft.plugin.taobao.command;
 
 import lol.clann.minecraft.plugin.taobao.Config;
 import lol.clann.minecraft.plugin.taobao.TaobaoDealService;
-import lol.clann.minecraft.plugin.taobao.TaobaoGuiManager;
 import lol.clann.minecraft.plugin.taobao.constant.ShopTypeEnum;
-import lol.clann.minecraft.plugin.taobao.message.Messages;
 import lol.clann.minecraft.plugin.taobao.model.domain.DealRule;
 import lol.clann.minecraft.springboot.api.annotation.command.*;
 import lol.clann.minecraft.springboot.api.bukkit.command.constant.CommandConcurrentLevelEnum;
@@ -31,15 +29,11 @@ import java.util.function.Consumer;
 public class TaobaoOPCommand {
     private Plugin plugin = PluginContext.getPlugin("Taobao");
     @Autowired
-    private TaobaoGuiManager taobaoGuiManager;
-    @Autowired
     private TaobaoDealService taobaoDealService;
     @Autowired
     private Config config;
     @Autowired
     private ItemStackUtils itemStackUtils;
-    @Autowired
-    private Messages messages;
 
     @Command(showArgs = "setPrePageButton",
             onlyPlayer = true,

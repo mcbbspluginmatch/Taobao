@@ -9,7 +9,10 @@ import lol.clann.minecraft.plugin.taobao.model.domain.DealRule;
 import lol.clann.minecraft.plugin.taobao.model.domain.Shop;
 import lol.clann.minecraft.plugin.taobao.model.domain.ShopItem;
 import lol.clann.minecraft.springboot.api.bukkit.rawmessage.RawMessage;
-import lol.clann.minecraft.springboot.api.bukkit.utils.*;
+import lol.clann.minecraft.springboot.api.bukkit.utils.InventoryUtils;
+import lol.clann.minecraft.springboot.api.bukkit.utils.ItemStackUtils;
+import lol.clann.minecraft.springboot.api.bukkit.utils.JSUtils;
+import lol.clann.minecraft.springboot.api.bukkit.utils.ServerUtils;
 import lol.clann.minecraft.springboot.api.model.LazyField;
 import lol.clann.minecraft.springboot.api.model.Result;
 import lombok.extern.slf4j.Slf4j;
@@ -54,8 +57,6 @@ public class TaobaoDealService {
     private Config config;
     @Autowired
     private ItemStackUtils itemStackUtils;
-    @Autowired
-    private MenuUtils menuUtils;
     @Autowired
     private JSUtils jsUtils;
     @Autowired
@@ -746,7 +747,7 @@ public class TaobaoDealService {
             }
         }
         List<String> lores = itemStackUtils.getLore(itemStack);
-        if (lores != null && lores.isEmpty()) {
+        if (lores != null && !lores.isEmpty()) {
             for (List<String> list : config.getRejectItemLores()) {
                 if (list.isEmpty()) {
                     continue;

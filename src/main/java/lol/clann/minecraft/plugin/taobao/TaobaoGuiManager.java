@@ -31,8 +31,6 @@ public class TaobaoGuiManager {
     @Autowired
     private MenuUtils menuUtils;
     @Autowired
-    private ServerUtils serverUtils;
-    @Autowired
     private TaobaoDealService taobaoDealService;
     @Autowired
     private TaobaoGuiManager taobaoGuiManager;

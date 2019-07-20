@@ -22,6 +22,6 @@ public class Define implements PluginDefine {
 
     @Override
     public String getVersion() {
-        return "0.0.2";
+        return "0.0.8";
     }
 }
