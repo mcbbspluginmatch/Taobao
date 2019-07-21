@@ -18,6 +18,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * 可能有人没见过@Getter和@Setter注解,百度搜lombok自行了解
+ *
+ * 使用@Configure注解来定义配置节点,一个字段就是一个节点
+ *
+ * @Configure(value = "taobao.icon.prePage", comment = "上一页按钮")
+ *
+ * 配置节点建议全部放在插件id下面(比如 淘宝的所有配置节点都是 taobao.xxx)
+ *
+ * 配置类中的@Configure字段,全部需要指定默认值,生成配置文件时,会使用这些默认值
+ *
+ * SBP会扫描插件中所有bean中被@Configure注解的字段,并将其写入配置文件中(意思是每个类都可以使用@Configure来声明配置节点,但建议将所有配置节点集中到特定的一个或多个类中)
+ *
+ * 在其他bean中,就可以使用@Autowired定义对这个bean的依赖,并使用这些配置节点
  *
  * @author pyz
  * @date 2019/6/2 11:37 PM

@@ -66,6 +66,10 @@ public class TaobaoDealService {
 
     private String noShopMsg = ChatColor.RED + "店铺不存在";
 
+    /**
+     * 被@PostConstruct注解的方法,会在bean对象创建,并且完成依赖注入后触发
+     * bean的初始化逻辑应写在@PostConstruct回调里,构造函数中不建议写任何逻辑
+     */
     @PostConstruct
     private void init() {
         RegisteredServiceProvider<Economy> svc = Bukkit.getServicesManager().getRegistration(Economy.class);
