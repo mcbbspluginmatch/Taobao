@@ -135,4 +135,16 @@ public class TaobaoOPCommand {
         plugin.saveConfig();
         sender.sendMessage(ChatColor.GREEN + "出售规则添加成功!");
     }
+
+    /**
+     * 设置系统商店
+     *
+     * @param sender
+     * @param owner
+     */
+    @Command(showArgs = "setAdmin <owner>", cooldown = 1000, concurrentLevel = CommandConcurrentLevelEnum.SENDER, des = "设置为系统商店", async = true)
+    private void setAdmin(@Sender CommandSender sender, String owner) {
+        taobaoDealService.setAdmin(sender, owner);
+    }
+
 }
