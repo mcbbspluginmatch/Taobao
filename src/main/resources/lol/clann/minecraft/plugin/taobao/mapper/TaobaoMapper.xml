@@ -236,8 +236,11 @@
 
     <update id="setAllShopItemCountAndCapabilityByShopId">
         update taobao_shop_item
-        set count = IF(type = 'buy', 0, 2147483647), max_count = 2147483647
-        where deleted = 0 and shop_id = #{shopId}
+        set `count` = 0, max_count = 2147483647
+        where deleted = 0 and `type` = 'buy' and shop_id = #{shopId};
+        update taobao_shop_item
+        set `count` = 2147483647, max_count = 2147483647
+        where deleted = 0 and `type` = 'sale' and shop_id = #{shopId};
     </update>
 
     <update id="updateShopStatistics">

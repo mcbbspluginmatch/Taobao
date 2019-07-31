@@ -36,7 +36,10 @@ create table if not exists `taobao_shop_item` (
   `deleted`     bit(1)              not null default 0,
   `updated`     timestamp            not null default current_timestamp on update current_timestamp,
   `created`     timestamp                null,
-  primary key (`id`)
+  primary key (`id`),
+  key `taobao_shop_item_idx_shop_id` (`shop_id`),
+  key `taobao_shop_item_idx_order` (`order`),
+  key `taobao_shop_item_idx_updated` (`updated`)
 );
 --
 -- 交易记录
@@ -53,20 +56,8 @@ create table if not exists `taobao_deal_log` (
   `deleted`     bit(1)              not null default 0,
   `updated`     timestamp            not null default current_timestamp on update current_timestamp,
   `created`     timestamp                null,
-  primary key (`id`)
-);
---
--- 交易规则
-create table if not exists `taobao_sale_rule` (
-  `id`          bigint(20) unsigned not null auto_increment,
-  `allow_sale`   bit(1)              not null default 1,
-  `match_durability`   bit(1)              not null default 1,
-  `match_nbt`   bit(1)              not null default 0,
-  `min_price` bigint(20) not null,
-  `max_price` bigint(20) not null,
-  `item`        mediumtext          not null comment '物品',
-  `deleted`     bit(1)              not null default 0,
-  `updated`     timestamp            not null default current_timestamp on update current_timestamp,
-  `created`     timestamp                null,
-  primary key (`id`)
+  primary key (`id`),
+  key `taobao_deal_log_idx_shop_id` (`shop_id`),
+  key `taobao_deal_log_idx_shop_item_id` (`shop_item_id`),
+  key `taobao_deal_log_idx_created` (`created`)
 );

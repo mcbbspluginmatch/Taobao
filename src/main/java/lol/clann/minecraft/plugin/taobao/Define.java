@@ -43,7 +43,7 @@ public class Define implements PluginDefine {
      */
     @Override
     public String getVersion() {
-        return "0.1.0";
+        return "0.1.1";
     }
 
     /**

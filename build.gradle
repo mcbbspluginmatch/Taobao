@@ -3,7 +3,7 @@ apply plugin: 'java'
 apply plugin: 'maven'
 
 group 'lol.clann.minecraft.plugin.sbp'
-version '0.1.0'
+version '0.1.1'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -13,18 +13,21 @@ repositories {
     maven {
         url "http://maven.aliyun.com/nexus/content/groups/public/"
     }
+    maven {
+        url "http://pv5dt62vi.bkt.clouddn.com"
+    }
 }
 
 dependencies {
     compileOnly "org.projectlombok:lombok:1.18.6"
     compileOnly "com.google.auto.service:auto-service:1.0-rc2"
-    compileOnly fileTree("compile-only")
 }
 
 // 不进行自动测试
 check.dependsOn.remove(test)
 
 dependencies {
-    compile fileTree("../bukkit-api/1.7")
+    compile ("lol.clann.minecraft.core:craftbukkit-1.7.10:R")
+    compile ("lol.clann.minecraft.plugin.bukkit:VaultAPI:1.4")
 }
 jar.destinationDir = file("build/libs")
