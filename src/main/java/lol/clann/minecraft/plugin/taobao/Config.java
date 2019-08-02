@@ -84,6 +84,7 @@ public class Config {
     private long setOrderCost = 10000;
     @Configure(value = "taobao.newSale.rule.dealRules", comment = "出售规则,可用来禁止物品出售或者限制最低售价")
     private List<DealRule> dealRules = new ArrayList<>();
+    // 为什么不用正则 —— 754503921
     @Configure(value = "taobao.newSale.rule.rejectItemNames", comment = "名字黑名单,每条规则可以包含多个关键字,物品的名字同时包含某个规则的所有关键字,就禁止出售.")
     private List<List<String>> rejectItemNames = new ArrayList<>();
     @Configure(value = "taobao.newSale.rule.rejectItemLores", comment = "lore黑名单,每条规则可以包含多个关键字,物品的lore同时包含某个规则的所有关键字,就禁止出售.")

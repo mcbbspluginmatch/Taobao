@@ -9,7 +9,7 @@ import lombok.Getter;
  */
 @Getter
 public enum ShopTypeEnum {
-    sale("出售"), buy("收购");
+    sale("出售"), buy("收购"); // 不规范的 enum 命名 —— 754503921
     private final String displayName;
 
     ShopTypeEnum(String displayName) {

@@ -29,5 +29,7 @@ check.dependsOn.remove(test)
 dependencies {
     compile ("lol.clann.minecraft.core:craftbukkit-1.7.10:R")
     compile ("lol.clann.minecraft.plugin.bukkit:VaultAPI:1.4")
+    // compile ("lol.clann.minecraft.plugin.bukkit:SpringBootPlugin:0.4.1.57")
+    // 其他评委如果需要完整的依赖，删掉注释 —— 754503921
 }
 jar.destinationDir = file("build/libs")

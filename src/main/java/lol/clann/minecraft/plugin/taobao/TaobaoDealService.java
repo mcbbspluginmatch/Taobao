@@ -86,6 +86,7 @@ public class TaobaoDealService {
             count = Integer.MAX_VALUE;
         }
         if (count <= 0) {
+            // 既然都有一个 Messages 类了，为什么还要硬编码 —— 754503921
             player.sendMessage(ChatColor.RED + "无效的数量:" + count);
             return;
         }
@@ -155,6 +156,9 @@ public class TaobaoDealService {
             item.setAmount(part);
             items.add(item);
         }
+        // 因为包管理器没有自动为我下载你的部分库，所以有的源码看不到
+        // 但是理论上，这里是异步的吧？
+        // 异步操作玩家背包 —— 754503921
         player.getInventory().addItem(items.toArray(new ItemStack[items.size()]));
         event.getInventory().setItem(event.getRawSlot(), shopItem.toIcon());
 
@@ -355,6 +359,8 @@ public class TaobaoDealService {
         msgContext.put("${name}", itemStackUtils.getDisplayName(item));
         msgContext.put("${type}", shopItem.getType().getDisplayName());
         msgContext.put("${money}", newShopItemCost);
+
+        // 翻了这么多，上面这段代码不断出现 —— 754503921
 
         if (transform(player, newShopItemCost, null, 0, true)) {
             taobaoMapper.insertShopItem(shopItem);
@@ -595,6 +601,7 @@ public class TaobaoDealService {
             player.sendMessage(ChatColor.RED + "您尚未开设商店,请输入指令查看帮助:/taobao");
             return;
         }
+        // 这个大概也是异步的吧 —— 754503921
         ItemStack hand = player.getItemInHand();
         if (itemStackUtils.isEmpty(hand)) {
             player.sendMessage(ChatColor.RED + "请把物品拿在手上");
@@ -737,6 +744,7 @@ public class TaobaoDealService {
             return Result.empty();
         }
         for (List<String> list : config.getRejectItemNames()) {
+            // if (list.stream().allMatch(name::contains)) { } —— 754503921
             if (list.isEmpty()) {
                 continue;
             }
@@ -753,6 +761,7 @@ public class TaobaoDealService {
         List<String> lores = itemStackUtils.getLore(itemStack);
         if (lores != null && !lores.isEmpty()) {
             for (List<String> list : config.getRejectItemLores()) {
+                // if (list.stream().allMatch(s -> lores.stream().anyMatch(l  -> l.contains(s)))) { } —— 754503921
                 if (list.isEmpty()) {
                     continue;
                 }
